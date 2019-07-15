@@ -17,11 +17,12 @@
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QMainWindow>
-#include <QtWidgets/QMenu>
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QSpacerItem>
+#include <QtWidgets/QStatusBar>
 #include <QtWidgets/QTableView>
+#include <QtWidgets/QToolBar>
 #include <QtWidgets/QWidget>
 
 QT_BEGIN_NAMESPACE
@@ -29,11 +30,6 @@ QT_BEGIN_NAMESPACE
 class Ui_MainWindow
 {
 public:
-    QAction *action111;
-    QAction *action111_2;
-    QAction *action1;
-    QAction *menu_setcom;
-    QAction *menu_statistics;
     QWidget *centralWidget;
     QGridLayout *gridLayout;
     QPushButton *pushButton_3;
@@ -57,8 +53,8 @@ public:
     QSpacerItem *horizontalSpacer_2;
     QSpacerItem *horizontalSpacer_14;
     QMenuBar *menuBar;
-    QMenu *menu;
-    QMenu *menu_2;
+    QStatusBar *statusBar;
+    QToolBar *mainToolBar;
 
     void setupUi(QMainWindow *MainWindow)
     {
@@ -70,21 +66,6 @@ public:
         sizePolicy.setVerticalStretch(0);
         sizePolicy.setHeightForWidth(MainWindow->sizePolicy().hasHeightForWidth());
         MainWindow->setSizePolicy(sizePolicy);
-        action111 = new QAction(MainWindow);
-        action111->setObjectName(QStringLiteral("action111"));
-        action111_2 = new QAction(MainWindow);
-        action111_2->setObjectName(QStringLiteral("action111_2"));
-        action1 = new QAction(MainWindow);
-        action1->setObjectName(QStringLiteral("action1"));
-        menu_setcom = new QAction(MainWindow);
-        menu_setcom->setObjectName(QStringLiteral("menu_setcom"));
-        menu_setcom->setCheckable(true);
-        menu_setcom->setChecked(true);
-        menu_setcom->setVisible(false);
-        menu_statistics = new QAction(MainWindow);
-        menu_statistics->setObjectName(QStringLiteral("menu_statistics"));
-        menu_statistics->setCheckable(true);
-        menu_statistics->setChecked(true);
         centralWidget = new QWidget(MainWindow);
         centralWidget->setObjectName(QStringLiteral("centralWidget"));
         gridLayout = new QGridLayout(centralWidget);
@@ -201,16 +182,13 @@ public:
         menuBar = new QMenuBar(MainWindow);
         menuBar->setObjectName(QStringLiteral("menuBar"));
         menuBar->setGeometry(QRect(0, 0, 1297, 23));
-        menu = new QMenu(menuBar);
-        menu->setObjectName(QStringLiteral("menu"));
-        menu_2 = new QMenu(menuBar);
-        menu_2->setObjectName(QStringLiteral("menu_2"));
         MainWindow->setMenuBar(menuBar);
-
-        menuBar->addAction(menu_2->menuAction());
-        menuBar->addAction(menu->menuAction());
-        menu->addAction(menu_setcom);
-        menu_2->addAction(menu_statistics);
+        statusBar = new QStatusBar(MainWindow);
+        statusBar->setObjectName(QStringLiteral("statusBar"));
+        MainWindow->setStatusBar(statusBar);
+        mainToolBar = new QToolBar(MainWindow);
+        mainToolBar->setObjectName(QStringLiteral("mainToolBar"));
+        MainWindow->addToolBar(Qt::TopToolBarArea, mainToolBar);
 
         retranslateUi(MainWindow);
 
@@ -220,16 +198,9 @@ public:
     void retranslateUi(QMainWindow *MainWindow)
     {
         MainWindow->setWindowTitle(QApplication::translate("MainWindow", "MainWindow", Q_NULLPTR));
-        action111->setText(QApplication::translate("MainWindow", "111", Q_NULLPTR));
-        action111_2->setText(QApplication::translate("MainWindow", "111", Q_NULLPTR));
-        action1->setText(QApplication::translate("MainWindow", "1", Q_NULLPTR));
-        menu_setcom->setText(QApplication::translate("MainWindow", "\344\270\262\345\217\243\350\256\276\347\275\256", Q_NULLPTR));
-        menu_statistics->setText(QApplication::translate("MainWindow", "\347\273\237\350\256\241", Q_NULLPTR));
         pushButton_3->setText(QApplication::translate("MainWindow", "\345\220\257\345\212\250", Q_NULLPTR));
         pushButton_2->setText(QApplication::translate("MainWindow", "\346\237\245\347\234\213\345\216\206\345\217\262\350\256\260\345\275\225", Q_NULLPTR));
         pushButton->setText(QApplication::translate("MainWindow", "\351\200\200\345\207\272", Q_NULLPTR));
-        menu->setTitle(QApplication::translate("MainWindow", "\344\270\262\345\217\243\350\256\276\347\275\256", Q_NULLPTR));
-        menu_2->setTitle(QApplication::translate("MainWindow", "\347\273\237\350\256\241", Q_NULLPTR));
     } // retranslateUi
 
 };

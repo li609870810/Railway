@@ -4,8 +4,9 @@
 #else
 #include <QtGui/QApplication>
 #endif
-#include "mainwindow.h"
+
 #include <QTextCodec>
+#include"login.h"
 
 int main(int argc, char *argv[])
 {
@@ -13,7 +14,10 @@ int main(int argc, char *argv[])
 #if QT_VERSION < 0x050000
     QTextCodec::setCodecForTr(QTextCodec::codecForName("utf8"));
 #endif
-    MainWindow w;
-    w.show();
+
+    Login login;
+    login.show();
+    //MainWindow w;
+    //w.show();
     return a.exec();
 }
