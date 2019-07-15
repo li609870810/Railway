@@ -226,37 +226,67 @@ int MainWindow::ReceiveThread()
 
 
 
-void MainWindow::Analysis_400mFrame(const QByteArray& data)
+void MainWindow::Analysis_400mFrame(const QByteArray& recvdata)
 {
 
-    for(int i=0;i<data.size();i++)//抛弃开头无效数据
+    for(int i=0;i<recvdata.size();i++)//抛弃开头无效数据
     {
         //data.toHex();
-        if((uchar)data.at(i) != 0xa5) continue;
-        if(data.at(i+1) != 0x5a) continue;
-        char len = data.at(i+2);
-        if(len > (data.size()-i-4))return;//该帧无效
-        uchar type = data.at(i+3);
+        if((uchar)recvdata.at(i) != 0xa5) continue;
+        if(recvdata.at(i+1) != 0x5a) continue;
+        char len = recvdata.at(i+2);
+        if(len > (recvdata.size()-i-4))return;//该帧无效
+        uchar type = recvdata.at(i+3);
 
         bool ifAnswer = false; //是否应答
-        QByteArray senddata = data.mid(i);
+        QByteArray data = recvdata.mid(i);
         QString insert_sql = "INSERT INTO 表名 (机车号,...所有字段名) VALUES ("; //数据库语句
 
         switch (type) {
         case 0xca://列尾信息
             {
-                if(checkSum(data.data()+i,20) != data.at(i+16)) return; //校验和失败
                 _400mEndColumnInfo _400ECI;
-                _400ECI.toJData(data.data()+(i+4),16);
+                _400ECI.toJData(data);
+                if(CheckSum(data.data(),20) != _400ECI.checkSum) return; //校验和失败
 
                 //应答信号
                 switch(_400ECI.command)
                 {
                     case 0x24:
-                    case 0x91:
-                    case 0x83:
-                    case 0xb5:
+                    {
+                    //信号 数据库操作
                     ifAnswer = true;
+                    }
+                    break;
+                    case 0x91:
+                    {
+                    //信号 数据库操作
+                    ifAnswer = true;
+                    }
+                    break;
+                    case 0x83:
+                    {
+                    //信号 数据库操作
+                    ifAnswer = true;
+                    }
+                    break;
+                    case 0xb5:
+                    {
+                    //信号 数据库操作
+                    ifAnswer = true;
+                    }
+                    break;
+                    case 0x31:
+                    {
+                    //信号 数据库操作
+                    ifAnswer = false;
+                    }
+                    break;
+                    case 0xb1:
+                    {
+                    //信号 数据库操作
+                    ifAnswer = false;
+                    }
                     break;
                 default:
                     ifAnswer =false;
@@ -275,10 +305,9 @@ void MainWindow::Analysis_400mFrame(const QByteArray& data)
                     _400ECI.time_mon = current_date_time.date().month();
                     _400ECI.time_year = current_date_time.date().year()-2000;
 
-                    _400ECI.toData(senddata.data()+4,16);
-                    senddata[20] = checkSum(senddata.data(),20);//校验和
+                    _400ECI.toData(data);
 
-                    _400mAnswer(senddata);
+                    _400mAnswer(data);
                 }
                 //信号 数据库操作
                 emit signal_SqlQuery(insert_sql);
@@ -296,24 +325,20 @@ void MainWindow::Analysis_400mFrame(const QByteArray& data)
                     crc14[j+7] = data.at(i+13+j);
                 }
                 uint16_t crc = CRC16(crc14,14);
-                if((crc & 0xff) != data.at(i+4)) return; //前7个字节CRC错误，抛弃此帧
-                if(((crc>>8) & 0xff) != data.at(i+12)) return; //后7个字节CRC错误，抛弃此帧
+                if((crc & 0xff) != data.at(4)) return; //前7个字节CRC错误，抛弃此帧
+                if(((crc>>8) & 0xff) != data.at(12)) return; //后7个字节CRC错误，抛弃此帧
+                if(CheckSum(data.data(),20) != data.at(20)); return; //校验和错误
 
-                _400mLibraryInspectionInfor _400mLII;
-                const int len = 7;
-                _400mLII.toJData(data.data()+(i+5),len);
-
-                switch (_400mLII.command) {
+                switch (data.at(3)) {
                 case 0x40:
                 {
                     _400mDataTestCommand _400mDTC;
-                    _400mDTC.toJData(data.data()+(i+13),len);
+                    _400mDTC.toJData(data);
 
                     //信号 数据库操作
-                    emit signal_SqlQuery(insert_sql);
+                    //emit signal_SqlQuery(insert_sql);
 
-                    _400mLII.command = 0x41;
-                    _400mLII.toData(senddata.data()+5,len);
+                    _400mDTC.Head.command = 0x41;
 
                     QDateTime current_date_time =QDateTime::currentDateTime();
                     _400mDTC.time_sce = current_date_time.time().second();
@@ -323,52 +348,35 @@ void MainWindow::Analysis_400mFrame(const QByteArray& data)
                     _400mDTC.time_mon = current_date_time.date().month();
                     _400mDTC.time_year = current_date_time.date().year()-2000;
 
-                    _400mDTC.toData(senddata.data()+13,len);
+                    _400mDTC.toData(data);
 
-                    for(int j=0;j<7;j++)
-                    {
-                        crc14[j] = senddata.at(i+5+j);
-                        crc14[j+7] = senddata.at(i+13+j);
-                    }
-                    crc = CRC16(crc14,14);
-                    senddata[4] = crc & 0xff;
-                    senddata[12] = (crc>>8) & 0xff;
-                    senddata[20] = checkSum(senddata.data(),20);//校验和
-                    _400mAnswer(senddata);
+                    _400mAnswer(data);
                     //ifAnswer = true;
                 }
-                    break;
+                break;
                 case 0x43:
                 {
-                    _400mDataTestCommand _400mDTC;
-                    _400mDTC.toJData(data.data()+(i+13),len);
+                    _400mGroundTelemetryCommand _400mGTC;
+                    _400mGTC.toJData(data);
 
                     //信号 数据库操作
-                    emit signal_SqlQuery(insert_sql);
+                    //emit signal_SqlQuery(insert_sql);
                 }
-                    break;
+                break;
                 case 0x44:
-                case 0x45:
+                case 0x45:{
                     _400mGroundTelemetryResults _400mGTR;
-                    _400mGTR.toJData(data.data()+(i+13),len);
+                    _400mGTR.toJData(data);
 
                     //信号 数据库操作
-                    emit signal_SqlQuery(insert_sql);
+                    //emit signal_SqlQuery(insert_sql);
 
-                    _400mLII.command = 0x46;
-                    _400mLII.toData(senddata.data()+5,len);
+                    _400mGTR.Head.command = 0x46;
+                    _400mGTR.Answer();
+                    _400mGTR.toData(data);
 
-                    for(int j=0;j<7;j++)
-                    {
-                        crc14[j] = senddata.at(i+5+j);
-                        crc14[j+7] = senddata.at(i+13+j);
+                    _400mAnswer(data);
                     }
-                    crc = CRC16(crc14,14);
-                    senddata[4] = crc & 0xff;
-                    senddata[12] = (crc>>8) & 0xff;
-                    senddata[20] = checkSum(senddata.data(),20);//校验和
-
-                    _400mAnswer(senddata);
                     break;
                 default:
                     break;
@@ -381,19 +389,19 @@ void MainWindow::Analysis_400mFrame(const QByteArray& data)
         case 0xf6:
             //信号 数据库操作
             //400m握手应答
-            emit signal_SqlQuery(insert_sql);
+            //emit signal_SqlQuery(insert_sql);
             //信号 界面显示
             return;
         case 0xf3:
             //信号 数据库操作
             //400m信道切换
-            emit signal_SqlQuery(insert_sql);
+            //emit signal_SqlQuery(insert_sql);
             //信号 界面显示
             return;
         case 0x03:
             //信号 数据库操作
-            //400m信道切换
-            emit signal_SqlQuery(insert_sql);
+            //400m设置查询发射功率
+            //emit signal_SqlQuery(insert_sql);
             //信号 界面显示
             return;
         default:
@@ -415,11 +423,14 @@ void MainWindow::Analysis_GMSRFrame(const QByteArray &recvdata)
         uint16_t crc = CRC16(data.data()+2,len);
         uint16_t datacrc = (data.at(len)<<8) + data.at(len+1);
         if(crc != datacrc) return; //crc错误
-        uchar type = data.at(17);
+
+        if(data.at(data.size()-2) != 0x10)return ;//结束错误
+        if(data.at(data.size()-1) != 0x03)return ;//结束错误
+
+        uchar type = (uchar)data.at(17);
 
         switch (type) {
-            case 0x11:
-            {
+            case 0x11:{
                 _GSMREndColumnInfo GSMRECI;
                 GSMRECI.toJData(data);
                 if(GSMRECI.end != 0x1003)return ;//结束错误
@@ -456,25 +467,49 @@ void MainWindow::Analysis_GMSRFrame(const QByteArray &recvdata)
                     case 0xb1:
                     //数据库操作
                     break;
+                default:
+                    return;
                 }
                 //界面显示
             }
             break;
-        case 0x21:{
+
+            case 0x21:{//GSMR模块状态
                 _GSMRStatus GSMRstatus;
                 GSMRstatus.toJData(data);
-                if(GSMRstatus.end != 0x1003)return ;//结束错误
+
                 //数据库操作
             }
             break;
 
-         case 0x25:{
+            case 0x23:{//GSMR网络注册
                 _GSMRNetworkRegist GSMRNR;
                 GSMRNR.toJData(data);
-                if(GSMRNR.end != 0x1003)return ;//结束错误
+
                 //数据库操作
             }
-             break;
+            break;
+
+            case 0x25:{//GSMR网络注销
+                _GSMRNetworkLogout GSMRNL;
+                GSMRNL.toJData(data);
+                //数据库操作
+            }
+            break;
+
+            case 0x27:{//GSMR模块关机
+                _GSMRNetworkLogout GSMRNL;
+                GSMRNL.toJData(data);
+                //数据库操作
+            }
+            break;
+
+            case 0x29:{//GSMR查询IP
+                _GSMRInquireIP GSMRIIP;
+                GSMRIIP.toJData(data);
+                //数据库操作
+            }
+            break;
         }
     }
 }

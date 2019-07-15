@@ -14,7 +14,7 @@ unsigned short CRC16(const char* pDataIn, int iLenIn)
     return wResult;
 }
 
-unsigned char checkSum(const char *src, unsigned long sizes) {
+unsigned char CheckSum(const char *src, unsigned long sizes) {
     unsigned char ret = 0;
     unsigned long i = 0;
     unsigned int sum = 0;

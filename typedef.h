@@ -3,7 +3,7 @@
 
 #include"stdint.h"
 #include<QByteArray>
-unsigned char checkSum(const char *src, unsigned long sizes);
+unsigned char CheckSum(const char *src, unsigned long sizes);
 
 static unsigned short const wCRC16Table[256] = {
     0x0000, 0xC0C1, 0xC181, 0x0140, 0xC301, 0x03C0, 0x0280, 0xC241,
@@ -41,8 +41,12 @@ static unsigned short const wCRC16Table[256] = {
 
 unsigned short CRC16(const char* pDataIn, int iLenIn);
 
+//////////////////_400M////////////////////////////
 typedef struct __400mEndColumnInfo //列尾
 {
+    uint16_t start;         //起始
+    uint8_t lenth;          //帧长度
+    uint8_t type;           //类型
     uint32_t LocomotiveNumber; //机车号
     uint8_t sendtype;       //发送设备类型
     uint8_t command;        //命令
@@ -55,56 +59,71 @@ typedef struct __400mEndColumnInfo //列尾
     uint8_t time_mon ;      //月
     uint8_t time_year;      //年
     uint8_t field;          //信号接收场强
+    uint8_t checkSum;       //校验和
 
-    void toJData(const char* data,const size_t len) //data To JDATA
+    void toJData(const QByteArray& recvdata) //data To JDATA
     {
-        if(len < 16) return;
-        LocomotiveNumber = static_cast<uint32_t>((data[0]<<24) + (data[1]<<16) + (data[2]<<8) + data[3]);
-        sendtype = static_cast<uint8_t>(data[4]);
-        command = static_cast<uint8_t>(data[5]);
-        WindPressure = static_cast<uint16_t>((data[6]<<8) + data[7]);
-        hostid = static_cast<uint32_t>((data[8]<<16) + (data[9]<<8) + data[10]);
-        time_sce = static_cast<uint8_t>(data[11] & 0x3f);
-        time_min = (data[11]>>6) & 0x3;
-        time_min = static_cast<uint8_t>(((data[12] & 0xf)<<2) + time_min);
-        time_hour = ((data[12]>>4) & 0xf);
-        time_hour = static_cast<uint8_t>(((data[13] & 0x1)<<4) + time_hour);
-        time_day = ((data[13]>>1) & 0x1f);
-        time_mon = ((data[13]>>6) & 0x3);
-        time_mon = static_cast<uint8_t>(((data[14] & 0x3)<<2) + time_mon);
-        time_year = (data[14]>>2) & 0x3f;
-        field = static_cast<uint8_t>(data[15]);
+
+        QByteArray data = recvdata;
+        if(data.size() < 21) return;
+        start = static_cast<uint16_t>((data.at(0)<<8) + data.at(1));
+        lenth = static_cast<uint8_t>(data.at(2));
+        type = static_cast<uint8_t>(data.at(3));
+        LocomotiveNumber = static_cast<uint32_t>((data.at(4)<<24) + (data.at(5)<<16) + (data.at(6)<<8) + data.at(7));
+        sendtype = static_cast<uint8_t>(data.at(8));
+        command = static_cast<uint8_t>(data.at(9));
+        WindPressure = static_cast<uint16_t>((data.at(10)<<8) + data.at(11));
+        hostid = static_cast<uint32_t>((data.at(12)<<16) + (data.at(13)<<8) + data.at(14));
+        time_sce = static_cast<uint8_t>(data.at(15) & 0x3f);
+        time_min = (data.at(15)>>6) & 0x3;
+        time_min = static_cast<uint8_t>(((data.at(16) & 0xf)<<2) + time_min);
+        time_hour = ((data.at(16)>>4) & 0xf);
+        time_hour = static_cast<uint8_t>(((data.at(17) & 0x1)<<4) + time_hour);
+        time_day = ((data.at(17)>>1) & 0x1f);
+        time_mon = ((data.at(17)>>6) & 0x3);
+        time_mon = static_cast<uint8_t>(((data.at(18) & 0x3)<<2) + time_mon);
+        time_year = (data.at(18)>>2) & 0x3f;
+        field = static_cast<uint8_t>(data.at(19));
+        checkSum = static_cast<uint8_t>(data.at(20));
     }
-    void toData(char* data,const size_t len) //JDATA To data
+    void toData(QByteArray& data) //JDATA To data
     {
-        if(len < 16) return;
-        data[0] = (LocomotiveNumber>>24) & 0xff;
-        data[1] = (LocomotiveNumber>>16) & 0xff;
-        data[2] = (LocomotiveNumber>>8) & 0xff;
-        data[3] = LocomotiveNumber & 0xff;
-        data[4] = sendtype;
-        data[5] = command;
-        data[6] = (WindPressure>>8) & 0xff;
-        data[7] = WindPressure & 0xff;
-        data[8] = (hostid>>16) & 0xff;
-        data[9] = (hostid>>8) & 0xff;
-        data[10] = hostid & 0xff;
-
-        data[11] = time_sce & 0x3f;
-
-        data[11] = ((time_min & 0x3)<<6) + data[11];
-        data[12] = ((time_min>>2) & 0xf) + ((time_hour & 0xf)<<4);
-        data[13] = ((time_hour>>4) & 0x1) + ((time_day & 0x1f)<<1);
-        data[13] = ((time_mon & 0x3)<<6) + data[13];
-        data[14] = (time_mon>>2) & 0x3;
-        data[14] = ((time_year & 0x3f)<<2) + data[14];
-        data[15] = field;
+        data.resize(21);
+        data[0] = (start>>8) & 0xff;
+        data[1] = start & 0xff;
+        data[2] = lenth & 0xff;
+        data[3] = type & 0xff;
+        data[4] = (LocomotiveNumber>>24) & 0xff;
+        data[5] = (LocomotiveNumber>>16) & 0xff;
+        data[6] = (LocomotiveNumber>>8) & 0xff;
+        data[7] = LocomotiveNumber & 0xff;
+        data[8] = sendtype;
+        data[9] = command;
+        data[10] = (WindPressure>>8) & 0xff;
+        data[11] = WindPressure & 0xff;
+        data[12] = (hostid>>16) & 0xff;
+        data[13] = (hostid>>8) & 0xff;
+        data[14] = hostid & 0xff;
+        data[15] = time_sce & 0x3f;
+        data[15] = ((time_min & 0x3)<<6) + data[11];
+        data[16] = ((time_min>>2) & 0xf) + ((time_hour & 0xf)<<4);
+        data[17] = ((time_hour>>4) & 0x1) + ((time_day & 0x1f)<<1);
+        data[17] = ((time_mon & 0x3)<<6) + data[13];
+        data[18] = (time_mon>>2) & 0x3;
+        data[18] = ((time_year & 0x3f)<<2) + data[14];
+        data[19] = field;
+        data[20] = CheckSum(data.data(),20);//校验和
     }
 
 }_400mEndColumnInfo;//400m列尾信息共用体
 
-typedef struct __400mLibraryInspectionInfor
+struct _400mDataHead
 {
+    uint16_t start;         //起始
+    uint8_t lenth;          //帧长度
+    uint8_t type;           //类型
+
+    uint8_t crc16H;         //CRC16高字节
     uint8_t fixed1;         //固定位1
     uint8_t fixed2;         //固定位2
     uint8_t JCQWBW;         //机车号千万百万位
@@ -113,48 +132,56 @@ typedef struct __400mLibraryInspectionInfor
     uint8_t sendtype;       //发送设备的类型
     uint8_t command;        //指令低字节
     uint8_t KJSBBHH;        //库检设备编号高位
-
-    void toData(char* data,const size_t len) //JDATA To data
+    void toData(QByteArray& data) //JDATA To data
     {
-        if(len < 7) return;
-        data[0] = fixed1 & 0x1;
-        data[0] = ((fixed2 & 0xf)<<1) + data[1];
-        data[0] = ((JCQWBW & 0x7)<<5) + data[1];
-        data[1] = (JCQWBW>>3) & 0xf;
-        data[1] = ((JCSWWQ & 0xf)<<4) + data[2];
-        data[2] = (JCSWWQ>>4) & 0x3f;
-        data[2] = ((JCBSG & 0x3)<<6) + data[3];
-        data[3] = (JCBSG>>2) & 0xff;
-        data[4] = sendtype;
-        data[5] = command;
-        data[6] = KJSBBHH;
-    }
-    void toJData(const char* data,const size_t len) //data To JDATA
-    {
-        if(len < 7) return;
-        fixed1 = data[0] & 0x1;
-        fixed2 = (data[0]>>1) & 0xf;
-        JCQWBW = (data[0]>>5) & 0x7;
-        JCQWBW = ((data[1] & 0xf)<<3) + JCQWBW;
-        JCSWWQ = (data[1]>>4) & 0xf;
-        JCSWWQ = ((data[2] & 0x3f)<<4) + JCSWWQ;
-        JCBSG = ((data[2]>>6) & 0x3);
-        JCBSG = (data[3]<<2) + JCBSG;
-        sendtype = data[4];
-        command = data[5];
-        KJSBBHH = data[6];
-    }
-}_400mLibraryInspectionInfor;//400m库检信息前8个字节通用共用体
+        data.resize(21);
+        data[0] = (start>>8) & 0xff;
+        data[1] = start & 0xff;
+        data[2] = lenth & 0xff;
+        data[3] = type & 0xff;
 
-/*uint8_t time_sce :6;       //秒
-uint8_t time_min :6;       //分
-uint8_t time_hour :5;      //时
-uint8_t time_day : 5;       //日
-uint8_t time_mon :4;      //月
-uint8_t time_year:6;      //年*/
-typedef struct __400mDataTestCommand
+        data[5] = fixed1 & 0x1;
+        data[5] = ((fixed2 & 0xf)<<1) + data[1];
+        data[5] = ((JCQWBW & 0x7)<<5) + data[1];
+        data[6] = (JCQWBW>>3) & 0xf;
+        data[6] = ((JCSWWQ & 0xf)<<4) + data[2];
+        data[7] = (JCSWWQ>>4) & 0x3f;
+        data[7] = ((JCBSG & 0x3)<<6) + data[3];
+        data[8] = (JCBSG>>2) & 0xff;
+        data[9] = sendtype;
+        data[10] = command;
+        data[11] = KJSBBHH;
+    }
+    void toJData(const QByteArray& recvdata) //data To JDATA
+    {
+        QByteArray data = recvdata;
+        if(data.size() < 21) return;
+        start = static_cast<uint16_t>((data.at(0)<<8) + data.at(1));
+        lenth = static_cast<uint8_t>(data.at(2));
+        type = static_cast<uint8_t>(data.at(3));
+        crc16H = static_cast<uint8_t>(data.at(4));
+
+        fixed1 = data.at(5) & 0x1;
+        fixed2 = (data.at(5)>>1) & 0xf;
+        JCQWBW = (data.at(5)>>5) & 0x7;
+        JCQWBW = ((data.at(6) & 0xf)<<3) + JCQWBW;
+        JCSWWQ = (data.at(6)>>4) & 0xf;
+        JCSWWQ = ((data.at(7) & 0x3f)<<4) + JCSWWQ;
+        JCBSG = ((data.at(7)>>6) & 0x3);
+        JCBSG = (data.at(8)<<2) + JCBSG;
+        sendtype = data.at(9);
+        command = data.at(10);
+        KJSBBHH = data.at(11);
+    }
+};
+
+typedef struct __400mDataTestCommand//400m数据测试结构体
 {
-    uint8_t fixed1;             //固定位1
+
+    _400mDataHead Head;
+
+    uint8_t crc16L;         //CRC16低字节
+    uint8_t fixed3;             //固定位1
     uint8_t KJSBBHL;              //库检设备编号低位
     uint8_t LocomotiveHost;     //机车端号
     uint8_t ControlBox;         //控制盒端号
@@ -165,43 +192,146 @@ typedef struct __400mDataTestCommand
     uint8_t time_mon;      //月
     uint8_t time_year;      //年
 
-    void toJData(const char* data,const size_t len) //data To JDATA
-    {
-        if(len < 7) return;
-        fixed1 = data[0] & 0x1;
-        KJSBBHL = (data[0]>>1) & 0x7f;
-        KJSBBHL = ((data[1] & 0x1)<<7) + KJSBBHL;
-        LocomotiveHost = (data[1]>>1) & 0x7f;
-        LocomotiveHost = ((data[2] & 0x1)<<7) + LocomotiveHost;
-        ControlBox = (data[2] >>1) & 0x7;
-        time_sce = (data[2]>>4) & 0xf;
-        time_sce = ((data[3] & 0x3)<<4) + time_sce;
-        time_min = (data[3]>>2) & 0x3f;
-        time_hour = data[4] & 0x1f;
-        time_day = (data[4]>>5) & 0x7;
-        time_day = ((data[5] & 0x3)<<3) + time_day;
-        time_mon = (data[5]>>2) & 0xf;
-        time_year = (data[5]>>6) & 0x3;
-        time_year = ((data[6] & 0xf)<<2) + time_year;
-    }
-    void toData(char* data,const size_t len) //JDATA To data
-    {
-         if(len < 7) return;
-        data[0] = fixed1 & 0x1;
-        data[0] = ((KJSBBHL & 0x7f)<<1) + data[0];
-        data[1] = ((LocomotiveHost & 0x7f)<<1) + ((KJSBBHL>>7) & 0x1);
-        data[2] = ((time_sce & 0xf)<<4) + ((ControlBox & 0x7)<<1) + ((LocomotiveHost>>7) & 0x1);
-        data[3] = ((time_min & 0x3f)<<2) + ((time_sce>>4) & 0x3);
-        data[4] = ((time_day & 0x7)<<5) + (time_hour & 0x1f);
-        data[5] = ((time_year & 0x3)<<6) + ((time_mon & 0xf)<<2) + ((time_day>>3) & 0x3);
-        data[6] = (time_year>>2) & 0xf;
-    }
-}_400mDataTestCommand;//400m数据测试共用体
+    uint8_t checkSum;       //校验和
 
+    void toData(QByteArray& data) //JDATA To data
+    {
+        data.resize(21);
+        Head.toData(data);
 
-typedef struct __400mGroundTelemetryResults
+        data[13] = fixed3 & 0x1;
+        data[13] = ((KJSBBHL & 0x7f)<<1) + data[0];
+        data[14] = ((LocomotiveHost & 0x7f)<<1) + ((KJSBBHL>>7) & 0x1);
+        data[15] = ((time_sce & 0xf)<<4) + ((ControlBox & 0x7)<<1) + ((LocomotiveHost>>7) & 0x1);
+        data[16] = ((time_min & 0x3f)<<2) + ((time_sce>>4) & 0x3);
+        data[17] = ((time_day & 0x7)<<5) + (time_hour & 0x1f);
+        data[18] = ((time_year & 0x3)<<6) + ((time_mon & 0xf)<<2) + ((time_day>>3) & 0x3);
+        data[19] = (time_year>>2) & 0xf;
+
+        char crc14[14] = {0};
+        for(int i=0;i<7;i++)
+        {
+            crc14[i] = data.at(i+5);
+            crc14[i+7] = data.at(i+13);
+        }
+        uint16_t crc = CRC16(crc14,14);
+
+        data[4] = (crc>>8) & 0xff;
+        data[12] = crc & 0xff;
+
+        data[20] = CheckSum(data.data(),20);//校验和
+    }
+    void toJData(const QByteArray& recvdata) //data To JDATA
+    {
+        QByteArray data = recvdata;
+        if(data.size() < 21) return;
+
+        Head.toJData(data);
+
+        crc16L = static_cast<uint8_t>(data.at(12));
+        fixed3 = data.at(13) & 0x1;
+        KJSBBHL = (data.at(13)>>1) & 0x7f;
+        KJSBBHL = ((data.at(14) & 0x1)<<7) + KJSBBHL;
+        LocomotiveHost = (data.at(14)>>1) & 0x7f;
+        LocomotiveHost = ((data.at(15) & 0x1)<<7) + LocomotiveHost;
+        ControlBox = (data.at(15) >>1) & 0x7;
+        time_sce = (data.at(15)>>4) & 0xf;
+        time_sce = ((data.at(16) & 0x3)<<4) + time_sce;
+        time_min = (data.at(16)>>2) & 0x3f;
+        time_hour = data.at(17) & 0x1f;
+        time_day = (data.at(17)>>5) & 0x7;
+        time_day = ((data.at(18) & 0x3)<<3) + time_day;
+        time_mon = (data.at(18)>>2) & 0xf;
+        time_year = (data.at(18)>>6) & 0x3;
+        time_year = ((data.at(19) & 0xf)<<2) + time_year;
+
+        checkSum  = static_cast<uint8_t>(data.at(20));
+    }
+}_400mDataTestCommand;//400m数据测试结构体
+
+/*uint8_t time_sce :6;       //秒
+uint8_t time_min :6;       //分
+uint8_t time_hour :5;      //时
+uint8_t time_day : 5;       //日
+uint8_t time_mon :4;      //月
+uint8_t time_year:6;      //年*/
+
+typedef struct __400mGroundTelemetryCommand//400m地面遥测命令结构体
 {
-    uint8_t fixed1;             //固定位1
+    _400mDataHead Head;
+
+    uint8_t crc16L;         //CRC16低字节
+    uint8_t fixed3;             //固定位3
+    uint8_t KJSBBHL;              //库检设备编号低位
+    uint8_t LocomotiveHost;     //机车端号
+    uint8_t ControlBox;         //控制盒端号
+    uint8_t IP1;                 //质检台IP
+    uint8_t IP2;                 //质检台IP
+    uint8_t IP3;                 //质检台IP
+    uint8_t IP4;                 //质检台IP
+
+    uint8_t checkSum;       //校验和
+
+    void toData(QByteArray& data) //JDATA To data
+    {
+        data.resize(21);
+        Head.toData(data);
+
+        data[13] = fixed3 & 0x1;
+        data[13] = ((KJSBBHL & 0x7f)<<1) + data[0];
+        data[14] = ((LocomotiveHost & 0x7f)<<1) + ((KJSBBHL>>7) & 0x1);
+        data[15] = ((IP1 & 0xf)<<4) + ((ControlBox & 0x7)<<1) + ((LocomotiveHost>>7) & 0x1);
+        data[16] = ((IP2 & 0xf)<<4) + ((IP1>>4) & 0xf);
+        data[17] = ((IP3 & 0xf)<<4) + ((IP2>>4) & 0xf);
+        data[18] = ((IP4 & 0xf)<<4) + ((IP3>>4) & 0xf);
+        data[19] = ((IP4>>4) & 0xf);
+
+        char crc14[14] = {0};
+        for(int i=0;i<7;i++)
+        {
+            crc14[i] = data.at(i+5);
+            crc14[i+7] = data.at(i+13);
+        }
+        uint16_t crc = CRC16(crc14,14);
+
+        data[4] = (crc>>8) & 0xff;
+        data[12] = crc & 0xff;
+
+        data[20] = CheckSum(data.data(),20);//校验和
+
+    }
+    void Answer()
+    {
+        IP1 = 0;
+        IP2 = 0;
+        IP3 = 0;
+        IP4 = 0;
+    }
+    void toJData(const QByteArray& recvdata) //data To JDATA
+    {
+        QByteArray data = recvdata;
+        if(data.size() < 21) return;
+        Head.toJData(data);
+
+        crc16L = static_cast<uint8_t>(data.at(12));
+        fixed3 = data.at(13) & 0x1;
+        KJSBBHL = (data.at(13)>>1) & 0x7f;
+        KJSBBHL = ((data.at(14) & 0x1)<<7) + KJSBBHL;
+        LocomotiveHost = (data.at(14)>>1) & 0x7f;
+        LocomotiveHost = ((data.at(15) & 0x1)<<7) + LocomotiveHost;
+        ControlBox = (data.at(15) >>1) & 0x7;
+
+        checkSum  = static_cast<uint8_t>(data.at(20));
+    }
+}_400mGroundTelemetryCommand;//400m地面遥测命令结构体
+
+
+typedef struct __400mGroundTelemetryResults//400m地面与上车遥测结果结构体
+{
+     _400mDataHead Head;
+
+    uint8_t crc16L;         //CRC16低字节
+    uint8_t fixed3;             //固定位1
     uint8_t KJSBBHL;              //库检设备编号低位
     uint8_t LocomotiveHost;     //机车端号
     uint8_t ControlBox;         //控制盒端号
@@ -215,43 +345,80 @@ typedef struct __400mGroundTelemetryResults
     uint8_t GMS_RUnit;            //GMS_R单元配置
     uint8_t _400mUnit;            //400m单元配置
 
-    void toJData(const char* data,const size_t len) //data To JDATA
-    {
-        if(len < 7) return;
-        fixed1 = data[0] & 0x1;
-        KJSBBHL = (data[0]>>1) & 0x7f;
-        KJSBBHL = ((data[1] & 0x1)<<7) + KJSBBHL;
-        LocomotiveHost = (data[1]>>1) & 0x7f;
-        LocomotiveHost = ((data[2] & 0x1)<<7) + LocomotiveHost;
-        ControlBox = (data[2] >>1) & 0x7;
-        GMS_RData = (data[2]>>4) & 0x1;
-        _400mData = (data[2]>>5) & 0x1;
-        DisconnectButton = (data[2]>>6) & 0x1;
-        ExhaustButton = (data[2]>>7) & 0x1;
-        QueryButton = data[3] & 0x1;
-        RecordingUnit = (data[3]>>1) & 0x1;
-        ClockUnit = (data[3]>>2) & 0x1;
-        GMS_RUnit = (data[3]>>3) & 0x1;
-        _400mUnit = (data[3]>>4) & 0x1;
-    }
-    void toData(char* data,const size_t len) //JDATA To data
-    {
-         if(len < 7) return;
-        data[0] = fixed1 & 0x1;
-        data[0] = ((KJSBBHL & 0x7f)<<1) + data[0];
-        data[1] = ((LocomotiveHost & 0x7f)<<1) + ((KJSBBHL>>7) & 0x1);
-        data[2] = ((ExhaustButton & 0x1)<<7) + ((DisconnectButton & 0x1)<<6) + ((_400mData & 0x1)<<5)\
-                + ((GMS_RData & 0x1)<<4) + ((ControlBox & 0x7)<<1) + ((LocomotiveHost>>7) & 0x1);
-        data[3] = ((_400mUnit & 0x7)<<4) + ((GMS_RUnit & 0x7)<<3) + ((ClockUnit & 0x7)<<2) + ((RecordingUnit & 0x7)<<1) + (QueryButton & 0x1);
-        data[3] = data[3] & 0x1f;
-    }
-}_400mGroundTelemetryResults;//400m地面遥测结果共用体
+    uint8_t checkSum;       //校验和
 
+    void Answer()
+    {
+        GMS_RData = 0;
+        _400mData = 0;
+        DisconnectButton = 0;
+        ExhaustButton = 0;
+
+        QueryButton = 0;
+        RecordingUnit = 0;
+        ClockUnit = 0;
+        GMS_RUnit = 0;
+    }
+    void toJData(const QByteArray& recvdata) //data To JDATA
+    {
+        QByteArray data = recvdata;
+        if(data.size() < 21) return;
+        Head.toJData(data);
+
+        fixed3 = data.at(13) & 0x1;
+        KJSBBHL = (data.at(13)>>1) & 0x7f;
+        KJSBBHL = ((data.at(14) & 0x1)<<7) + KJSBBHL;
+        LocomotiveHost = (data.at(14)>>1) & 0x7f;
+        LocomotiveHost = ((data.at(15) & 0x1)<<7) + LocomotiveHost;
+        ControlBox = (data.at(15) >>1) & 0x7;
+
+        GMS_RData = (data.at(15)>>4) & 0x1;
+        _400mData = (data.at(15)>>5) & 0x1;
+        DisconnectButton = (data.at(15)>>6) & 0x1;
+        ExhaustButton = (data.at(15)>>7) & 0x1;
+        QueryButton = data.at(16) & 0x1;
+        RecordingUnit = (data.at(16)>>1) & 0x1;
+        ClockUnit = (data.at(16)>>2) & 0x1;
+        GMS_RUnit = (data.at(16)>>3) & 0x1;
+        _400mUnit = (data.at(16)>>4) & 0x1;
+
+        checkSum  = static_cast<uint8_t>(data.at(20));
+    }
+    void toData(QByteArray& data) //JDATA To data
+    {
+        data.resize(21);
+        Head.toData(data);
+
+        data[13] = fixed3 & 0x1;
+        data[13] = ((KJSBBHL & 0x7f)<<1) + data[0];
+        data[14] = ((LocomotiveHost & 0x7f)<<1) + ((KJSBBHL>>7) & 0x1);
+        data[15] = ((ExhaustButton & 0x1)<<7) + ((DisconnectButton & 0x1)<<6) + ((_400mData & 0x1)<<5)\
+                + ((GMS_RData & 0x1)<<4) + ((ControlBox & 0x7)<<1) + ((LocomotiveHost>>7) & 0x1);
+
+        data[16] = ((_400mUnit & 0x7)<<4) + ((GMS_RUnit & 0x7)<<3) + ((ClockUnit & 0x7)<<2) + ((RecordingUnit & 0x7)<<1) + (QueryButton & 0x1);
+        data[16] = data[3] & 0x1f;
+
+        char crc14[14] = {0};
+        for(int i=0;i<7;i++)
+        {
+            crc14[i] = data.at(i+5);
+            crc14[i+7] = data.at(i+13);
+        }
+        uint16_t crc = CRC16(crc14,14);
+
+        data[4] = (crc>>8) & 0xff;
+        data[12] = crc & 0xff;
+
+        data[20] = CheckSum(data.data(),20);//校验和
+    }
+}_400mGroundTelemetryResults;//400m地面遥测与上车结果结构体
+
+//////////////////GSMR////////////////////////////
 void addDLE(QByteArray& data);//遇到DLE字符在后面再加一个
 
 void deleteDLE(QByteArray& data);//接受信息中遇到DLE字符删除一个
 
-typedef struct __GSMREndColumnInfo //GSMR 列尾
+struct _GSMRDataHead
 {
     uint16_t start; //起始
     uint16_t lenth;//帧长度
@@ -263,6 +430,47 @@ typedef struct __GSMREndColumnInfo //GSMR 列尾
     uint32_t TargetAddr;//目的地址
     uint8_t FrameType; //业务类型
     uint8_t FrameCommand;//命令
+
+    void toData(QByteArray& data) //JDATA To data
+    {
+        data.append(static_cast<char>((start>>8) & 0xff));
+        data.append(static_cast<char>(start & 0xff));
+        data.append(static_cast<char>((lenth>>8) & 0xff));
+        data.append(static_cast<char>(lenth & 0xff));
+        data.append(static_cast<char>(SourcePort & 0xff));
+        data.append(static_cast<char>(SourceAddrLen & 0xff)) ;
+        data.append(static_cast<char>((SourceAddr>>24) & 0xff));
+        data.append(static_cast<char>((SourceAddr>>16) & 0xff));
+        data.append(static_cast<char>((SourceAddr>>8) & 0xff));
+        data.append(static_cast<char>(SourceAddr & 0xff));
+        data.append(static_cast<char>(TargetPort & 0xff));
+        data.append(static_cast<char>(TargetAddrLen & 0xff));
+        data.append(static_cast<char>(SourceAddrLen & 0xff)) ;
+        data.append(static_cast<char>((TargetAddr>>24) & 0xff));
+        data.append(static_cast<char>((TargetAddr>>16) & 0xff));
+        data.append(static_cast<char>((TargetAddr>>8) & 0xff));
+        data.append(static_cast<char>(TargetAddr & 0xff));
+        data.append(static_cast<char>(FrameType & 0xff));
+        data.append(static_cast<char>(FrameCommand & 0xff));
+    }
+    void toJData(const QByteArray& data) //data To JDATA
+    {
+        start = static_cast<uint16_t>((data.at(0)<<8) + data.at(1));
+        lenth = static_cast<uint16_t>((data.at(2)<<8) + data.at(3));
+        SourcePort = static_cast<uint8_t>(data.at(4));
+        SourceAddrLen = static_cast<uint8_t>(data.at(5));
+        SourceAddr = static_cast<uint32_t>((data.at(6)<<24) + (data.at(7)<<16) + (data.at(8)<<8) + data.at(9));
+        TargetPort = static_cast<uint8_t>(data.at(10));
+        TargetAddrLen  = static_cast<uint8_t>(data.at(11));
+        TargetAddr = static_cast<uint32_t>((data.at(12)<<24) + (data.at(13)<<16) + (data.at(14)<<8) + data.at(15));
+        FrameType = static_cast<uint8_t>(data.at(16));
+        FrameCommand = static_cast<uint8_t>(data.at(17));
+    }
+};
+
+typedef struct __GSMREndColumnInfo //GSMR 列尾
+{
+    _GSMRDataHead Head;
 
     uint32_t LocomotiveNumber; //机车号
     uint8_t sendtype;       //发送设备类型
@@ -289,16 +497,7 @@ typedef struct __GSMREndColumnInfo //GSMR 列尾
         QByteArray data = recvdata;
         deleteDLE(data);
         if(data.size() < 0x36) return;
-        start = static_cast<uint16_t>((data.at(0)<<8) + data.at(1));
-        lenth = static_cast<uint16_t>((data.at(2)<<8) + data.at(3));
-        SourcePort = static_cast<uint8_t>(data.at(4));
-        SourceAddrLen = static_cast<uint8_t>(data.at(5));
-        SourceAddr = static_cast<uint32_t>((data.at(6)<<24) + (data.at(7)<<16) + (data.at(8)<<8) + data.at(9));
-        TargetPort = static_cast<uint8_t>(data.at(10));
-        TargetAddrLen  = static_cast<uint8_t>(data.at(11));
-        TargetAddr = static_cast<uint32_t>((data.at(12)<<24) + (data.at(13)<<16) + (data.at(14)<<8) + data.at(15));
-        FrameType = static_cast<uint8_t>(data.at(16));
-        FrameCommand = static_cast<uint8_t>(data.at(17));
+        Head.toJData(data);
 
         LocomotiveNumber = static_cast<uint32_t>((data.at(18)<<24) + (data.at(19)<<16) + (data.at(20)<<8) + data.at(21));
         sendtype = static_cast<uint8_t>(data.at(22));
@@ -326,67 +525,46 @@ typedef struct __GSMREndColumnInfo //GSMR 列尾
     }
     void toData(QByteArray& data) //JDATA To data
     {
-        data.resize(0x36);
-        data[0] = (start>>8) & 0xff;
-        data[1] = start & 0xff;
-        data[2] = (lenth>>8) & 0xff;
-        data[3] = lenth & 0xff;
-        data[4] = SourcePort & 0xff;
-        data[5] = SourceAddrLen & 0xff ;
-        data[6] = (SourceAddr>>24) & 0xff;
-        data[7] = (SourceAddr>>16) & 0xff;
-        data[8] = (SourceAddr>>8) & 0xff;
-        data[9] = SourceAddr & 0xff;
-        data[10] = TargetPort & 0xff;
-        data[11] = TargetAddrLen & 0xff;
-        data[12] = SourceAddrLen & 0xff ;
-        data[13] = (TargetAddr>>24) & 0xff;
-        data[14] = (TargetAddr>>16) & 0xff;
-        data[15] = (TargetAddr>>8) & 0xff;
-        data[16] = TargetAddr & 0xff;
-        data[17] = FrameType & 0xff;
-        data[18] = FrameCommand & 0xff;
-        data[19] = (LocomotiveNumber>>24) & 0xff;
-        data[20] = (LocomotiveNumber>>16) & 0xff;
-        data[21] = (LocomotiveNumber>>8) & 0xff;
-        data[22] = LocomotiveNumber & 0xff;
-        data[23] = sendtype & 0xff;
-        data[24] = command & 0xff;
-        data[25] = (WindPressure>>8) & 0xff;
-        data[26] = WindPressure & 0xff;
-        data[27] = (hostid>>16) & 0xff;
-        data[28] = (hostid>>8) & 0xff;
-        data[29] = hostid & 0xff;
-        data[30] = time_sce & 0x3f;
+        data.clear();
+        Head.toData(data);
+        data.append(static_cast<char>((LocomotiveNumber>>24) & 0xff));
+        data.append(static_cast<char>((LocomotiveNumber>>16) & 0xff));
+        data.append(static_cast<char>((LocomotiveNumber>>8) & 0xff));
+        data.append(static_cast<char>(LocomotiveNumber & 0xff));
+        data.append(static_cast<char>(sendtype & 0xff));
+        data.append(static_cast<char>(command & 0xff));
+        data.append(static_cast<char>((WindPressure>>8) & 0xff));
+        data.append(static_cast<char>( WindPressure & 0xff));
+        data.append(static_cast<char>((hostid>>16) & 0xff));
+        data.append(static_cast<char>((hostid>>8) & 0xff));
+        data.append(static_cast<char>( hostid & 0xff));
 
-        data[30] = static_cast<char>(((time_min & 0x3)<<6) + data[30]);
-        data[31] = static_cast<char>(((time_min>>2) & 0xf) + ((time_hour & 0xf)<<4));
-        data[32] = static_cast<char>(((time_hour>>4) & 0x1) + ((time_day & 0x1f)<<1));
-        data[32] = static_cast<char>(((time_mon & 0x3)<<6) + data[32]);
-        data[33] = static_cast<char>((time_mon>>2) & 0x3);
-        data[33] = static_cast<char>(((time_year & 0x3f)<<2) + data[33]);
-        data[34] = (Position>>8) & 0xff;
-        data[35] = Position & 0xff;
-        data[36] = (CellNumber>>8) & 0xff;
-        data[37] = CellNumber & 0xff;
-        data[38] = (Voltage>>8) & 0xff;
-        data[39] = Voltage & 0xff;
-        data[40] = (Current>>8) & 0xff;
-        data[41] = Current & 0xff;
-        data[42] = (Battery>>16) & 0xff;
-        data[43] = (Battery>>8) & 0xff;
-        data[44] = Battery & 0xff;
-        data[45] = 0xff;
-        data[46] = 0xff;
-        data[47] = 0xff;
-        data[48] = 0xff;
-        data[49] = 0xff;
-        data[50] = 0xff;
+        data.append(static_cast<char>(((time_min & 0x3)<<6) + (time_sce & 0x3f));
+        data.append(static_cast<char>(((time_min>>2) & 0xf) + ((time_hour & 0xf)<<4));
+        data.append(static_cast<char>(((time_mon & 0x3)<<6) + ((time_day & 0x1f)<<1) + ((time_hour>>4) & 0x1));
+        data.append(static_cast<char>(((time_year & 0x3f)<<2) + ((time_mon>>2) & 0x3));
+        data.append(static_cast<char>((Position>>8) & 0xff));
+        data.append(static_cast<char>(Position & 0xff));
+        data.append(static_cast<char>((CellNumber>>8) & 0xff));
+        data.append(static_cast<char>(CellNumber & 0xff));
+        data.append(static_cast<char>((Voltage>>8) & 0xff));
+        data.append(static_cast<char>(Voltage & 0xff));
+        data.append(static_cast<char>((Current>>8) & 0xff));
+        data.append(static_cast<char>(Current & 0xff));
+        data.append(static_cast<char>((Battery>>16) & 0xff));
+        data.append(static_cast<char>((Battery>>8) & 0xff));
+        data.append(static_cast<char>(Battery & 0xff));
+        data.append(0xff);
+        data.append(static_cast<char>(0xff));
+        data.append(static_cast<char>(0xff));
+        data.append(static_cast<char>( 0xff));
+        data.append(static_cast<char>(0xff));
+        data.append(static_cast<char>(0xff));
         unsigned short crc = CRC16(data.data()+2, lenth);
-        data[51] = (crc>>8) & 0xff;
-        data[52] = crc & 0xff;
-        data[53] = (end>>8) & 0xff;
-        data[54] = end & 0xff;
+        data.append(static_cast<char>((crc>>8) & 0xff));
+        data.append(static_cast<char>(crc & 0xff));
+        data.append(static_cast<char>((end>>8) & 0xff));
+        data.append(static_cast<char>(end & 0xff));
         addDLE(data);
     }
 
@@ -394,16 +572,7 @@ typedef struct __GSMREndColumnInfo //GSMR 列尾
 
 typedef struct __GSMRStatus  //GSMR模块状态
 {
-    uint16_t start; //起始
-    uint16_t lenth;//帧长度
-    uint8_t SourcePort; //源端口
-    uint8_t SourceAddrLen; //源地址长度
-    uint32_t SourceAddr;//源地址
-    uint8_t TargetPort; //目的端口
-    uint8_t TargetAddrLen; //目的地址长度
-    uint32_t TargetAddr;//目的地址
-    uint8_t FrameType; //业务类型
-    uint8_t FrameCommand;//命令
+    _GSMRDataHead Head;
 
     uint8_t Rstatus1;             //模块状态1
     uint8_t Rstatus2;              //模块状态2
@@ -421,16 +590,7 @@ typedef struct __GSMRStatus  //GSMR模块状态
         QByteArray data = recvdata;
         deleteDLE(data);
         if(data.size() < 31) return;
-        start = static_cast<uint16_t>((data.at(0)<<8) + data.at(1));
-        lenth = static_cast<uint16_t>((data.at(2)<<8) + data.at(3));
-        SourcePort = static_cast<uint8_t>(data.at(4));
-        SourceAddrLen = static_cast<uint8_t>(data.at(5));
-        SourceAddr = static_cast<uint32_t>((data.at(6)<<24) + (data.at(7)<<16) + (data.at(8)<<8) + data.at(9));
-        TargetPort = static_cast<uint8_t>(data.at(10));
-        TargetAddrLen  = static_cast<uint8_t>(data.at(11));
-        TargetAddr = static_cast<uint32_t>((data.at(12)<<24) + (data.at(13)<<16) + (data.at(14)<<8) + data.at(15));
-        FrameType = static_cast<uint8_t>(data.at(16));
-        FrameCommand = static_cast<uint8_t>(data.at(17));
+        Head.toJData(data);
 
         Rstatus1 = (data.at(18)>>4) & 0xf;
         Rstatus2 = data.at(18) & 0xf;
@@ -447,60 +607,200 @@ typedef struct __GSMRStatus  //GSMR模块状态
 
 typedef struct __GSMRNetworkRegist  //GSMR网络注册
 {
-    uint16_t start; //起始
-    uint16_t lenth;//帧长度
-    uint8_t SourcePort; //源端口
-    uint8_t SourceAddrLen; //源地址长度
-    uint32_t SourceAddr;//源地址
-    uint8_t TargetPort; //目的端口
-    uint8_t TargetAddrLen; //目的地址长度
-    uint32_t TargetAddr;//目的地址
-    uint8_t FrameType; //业务类型
-    uint8_t FrameCommand;//命令
+    _GSMRDataHead Head;
 
-    uint8_t RegistRstatus;    //注册状态
+    uint8_t RegistStatus;    //注册状态
     uint8_t IP1;              //IP1
     uint8_t IP2;               //IP2
     uint8_t IP3;               //IP3
     uint8_t IP4;               //IP4
+    uint8_t APNAddr[24];           //APN地址
+    uint8_t APNAddrlen;             //不参与帧，发送前一定要先设置长度
+
     uint8_t APNName[16];           //APN用户名
-    uint8_t Separate;            //分隔符
+    uint8_t APNNamelen;             //不参与帧，发送前一定要先设置长度
+
+    uint8_t APNPSW[16];           //APN密码
+    uint8_t APNPSWlen;              //不参与帧，发送前一定要先设置长度
+
 
     uint16_t crc16;         //CRC
     uint16_t end;           //帧结束
+    void toData(QByteArray& data) //JDATA To data
+    {
+        data.clear();
+        Head.toData(data);
 
+        for(int i=0;i<APNAddrlen;i++)
+        {
+            data.append(static_cast<char>(APNAddr[i]));
+        }
+        data.append(static_cast<char>(0x20));
+        for(int i=0;i<APNNamelen;i++)
+        {
+            data.append(static_cast<char>(APNName[i]));
+        }
+        data.append(static_cast<char>(0x20));
+        for(int i=0;i<APNPSWlen;i++)
+        {
+            data.append(static_cast<char>(APNPSW[i]));
+        }
+        data.append(static_cast<char>(0x20));
+
+        addDLE(data);
+        Head.lenth = data.size()-2;
+        data[2] = (Head.lenth>>8) & 0xff;
+        data[3] = Head.lenth & 0xff;
+        auto newcrc16 = CRC16(data.data()+2,Head.lenth);
+        data.append(static_cast<char>((newcrc16>>8) & 0xff));
+        data.append(static_cast<char>(newcrc16 & 0xff));
+        data.append(static_cast<char>(0x10));
+        data.append(static_cast<char>(0x03));
+        addDLE(data);
+
+    }
+    void toJData(const QByteArray& recvdata) //data To JDATA
+    {
+        QByteArray data = recvdata;
+        deleteDLE(data);
+        if(data.size() < 32) return;
+        Head.toJData(data);
+
+        RegistStatus = static_cast<uint8_t>(data.at(18));
+        IP1 = static_cast<uint8_t>(data.at(19));
+        IP2 = static_cast<uint8_t>(data.at(20));
+        IP3 = static_cast<uint8_t>(data.at(21));
+        IP4 = static_cast<uint8_t>(data.at(22));
+        for(int i=0;i<lenth-23;i++)
+        {
+            if(data.at(23+i) == 0x20)
+            {
+                crc16 = static_cast<uint16_t>((data.at(24+i)<<8) + data.at(25+i));
+                end = static_cast<uint16_t>((data.at(26+i)<<8) + data.at(27+i));
+                break;
+            }else{
+                APNName[i] = static_cast<uint8_t>(data.at(23+i));
+            }
+        }
+    }
+
+}_GSMRNetworkRegist;
+typedef struct __GSMRNetworkLogout//GSMR网络注销,模块关机
+{
+    _GSMRDataHead Head;
+
+    uint8_t Status;         //状态
+
+    uint16_t crc16;         //CRC
+    uint16_t end;           //帧结束
+    void toData(QByteArray& data) //JDATA To data
+    {
+        data.clear();
+        Head.toData(data);
+        data.append(static_cast<char>(Status));
+        addDLE(data);
+
+        Head.lenth = data.size()-2;
+        data[2] = (Head.lenth>>8) & 0xff;
+        data[3] = Head.lenth & 0xff;
+        auto newcrc16 = CRC16(data.data()+2,Head.lenth);
+        data.append(static_cast<char>((newcrc16>>8) & 0xff));
+        data.append(static_cast<char>(newcrc16 & 0xff));
+        data.append(static_cast<char>(0x10));
+        data.append(static_cast<char>(0x03));
+        addDLE(data);
+
+    }
     void toJData(const QByteArray& recvdata) //data To JDATA
     {
         QByteArray data = recvdata;
         deleteDLE(data);
         if(data.size() < 30) return;
-        start = static_cast<uint16_t>((data.at(0)<<8) + data.at(1));
-        lenth = static_cast<uint16_t>((data.at(2)<<8) + data.at(3));
-        SourcePort = static_cast<uint8_t>(data.at(4));
-        SourceAddrLen = static_cast<uint8_t>(data.at(5));
-        SourceAddr = static_cast<uint32_t>((data.at(6)<<24) + (data.at(7)<<16) + (data.at(8)<<8) + data.at(9));
-        TargetPort = static_cast<uint8_t>(data.at(10));
-        TargetAddrLen  = static_cast<uint8_t>(data.at(11));
-        TargetAddr = static_cast<uint32_t>((data.at(12)<<24) + (data.at(13)<<16) + (data.at(14)<<8) + data.at(15));
-        FrameType = static_cast<uint8_t>(data.at(16));
-        FrameCommand = static_cast<uint8_t>(data.at(17));
+        Head.toJData(data);
+        Status = static_cast<uint8_t>(data.at(18));
 
-        RegistRstatus = static_cast<uint8_t>(data.at(18));
-        IP1 = static_cast<uint8_t>(data.at(19));
-        IP2 = static_cast<uint8_t>(data.at(20));
-        IP3 = static_cast<uint8_t>(data.at(21));
-        IP4 = static_cast<uint8_t>(data.at(22));
-        for(int i=0;i<lenth-16;i++)
-        {
-            APNName[i] = static_cast<uint8_t>(data.at(23+i));
-            if(APNName[i] == 0x20)
-            {
-                Separate = 0x20;
-                crc16 = static_cast<uint16_t>((data.at(24+i)<<8) + data.at(25+i));
-                end = static_cast<uint16_t>((data.at(26+i)<<8) + data.at(27+i));
-                break;
-            }
-        }
+        crc16 = static_cast<uint16_t>((data.at(19)<<8) + data.at(20));
+        end = static_cast<uint16_t>((data.at(21)<<8) + data.at(22));
     }
-}_GSMRNetworkRegist;
+
+}_GSMRNetworkLogout;
+
+typedef struct __GSMRInquireIP//GSMR网络注销,模块关机
+{
+    _GSMRDataHead Head;
+
+    uint8_t mainIP1;         //主用IP
+    uint8_t mainIP2;         //主用IP
+    uint8_t mainIP3;         //主用IP
+    uint8_t mainIP4;         //主用IP
+
+    uint8_t backIP1;         //备用IP
+    uint8_t backIP2;         //备用IP
+    uint8_t backIP3;         //备用IP
+    uint8_t backIP4;         //备用IP
+
+    uint8_t APNName[16];     //车载设备域名
+    uint8_t APNNamelen;      //不参与帧，发送前一定要先设置长度
+
+    uint8_t Status;         //查询状态
+    uint8_t CheckDeskIP1;      //库检台IP
+    uint8_t CheckDeskIP2;      //库检台IP
+    uint8_t CheckDeskIP3;      //库检台IP
+    uint8_t CheckDeskIP4;      //库检台IP
+
+    uint16_t crc16;         //CRC
+    uint16_t end;           //帧结束
+
+    void toData(QByteArray& data) //JDATA To data
+    {
+        data.clear();
+        Head.toData(data);
+        data.append(static_cast<char>(mainIP1));
+        data.append(static_cast<char>(mainIP2));
+        data.append(static_cast<char>(mainIP3));
+        data.append(static_cast<char>(mainIP4));
+
+        data.append(static_cast<char>(backIP1));
+        data.append(static_cast<char>(mainIP2));
+        data.append(static_cast<char>(mainIP3));
+        data.append(static_cast<char>(mainIP4));
+
+        for(int i=0;i<APNNamelen;i++)
+        {
+            data.append(static_cast<char>(APNName[i]));
+        }
+        data.append(static_cast<char>(0x20));
+
+        addDLE(data);
+
+        Head.lenth = data.size()-2;
+        data[2] = (Head.lenth>>8) & 0xff;
+        data[3] = Head.lenth & 0xff;
+        auto newcrc16 = CRC16(data.data()+2,Head.lenth);
+        data.append(static_cast<char>((newcrc16>>8) & 0xff));
+        data.append(static_cast<char>(newcrc16 & 0xff));
+        data.append(static_cast<char>(0x10));
+        data.append(static_cast<char>(0x03));
+        addDLE(data);
+
+    }
+    void toJData(const QByteArray& recvdata) //data To JDATA
+    {
+        QByteArray data = recvdata;
+        deleteDLE(data);
+        if(data.size() < 30) return;
+        Head.toJData(data);
+
+        Status = static_cast<uint8_t>(data.at(18));
+        CheckDeskIP1 = static_cast<uint8_t>(data.at(19));
+        CheckDeskIP2 = static_cast<uint8_t>(data.at(20));
+        CheckDeskIP3 = static_cast<uint8_t>(data.at(21));
+        CheckDeskIP4 = static_cast<uint8_t>(data.at(22));
+
+        crc16 = static_cast<uint16_t>((data.at(23)<<8) + data.at(24));
+        end = static_cast<uint16_t>((data.at(25)<<8) + data.at(26));
+    }
+
+}_GSMRInquireIP;
+
 #endif // TYPEDEF_H
