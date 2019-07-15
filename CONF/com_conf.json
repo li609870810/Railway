@@ -1,0 +1,12 @@
+{
+  "com": [
+    {
+      "name": "com2",
+      "baudrate": 9600
+    },
+    {
+      "name": "com3",
+      "baudrate": 9600
+    }
+  ]
+}

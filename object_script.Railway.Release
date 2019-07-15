@@ -1,0 +1,14 @@
+INPUT(
+./release\mainwindow.o
+./release\datetime.o
+./release\log.o
+./release\serialport.o
+./release\barchart.o
+./release\main.o
+./release\login.o
+./release\typedef.o
+./release\moc_mainwindow.o
+./release\moc_datetime.o
+./release\moc_barchart.o
+./release\moc_login.o
+);

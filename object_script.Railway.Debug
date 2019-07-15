@@ -1,0 +1,14 @@
+INPUT(
+./debug\mainwindow.o
+./debug\datetime.o
+./debug\log.o
+./debug\serialport.o
+./debug\barchart.o
+./debug\main.o
+./debug\login.o
+./debug\typedef.o
+./debug\moc_mainwindow.o
+./debug\moc_datetime.o
+./debug\moc_barchart.o
+./debug\moc_login.o
+);
