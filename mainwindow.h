@@ -7,7 +7,7 @@
 #include"barchart.h"
 #include "datetime.h"
 #include"analysis.h"
-
+#include"mysqlmodel.h"
 namespace Ui {
 class MainWindow;
 }
@@ -40,6 +40,7 @@ private:
     Ui::MainWindow *ui;
     BarChart* barchart;
     DateTime *date;
+    MysqlModel *mysqlmodel;
 
     std::thread receiveThread;
     int ReceiveThread();

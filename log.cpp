@@ -23,7 +23,7 @@ void Log::writelog(const QString& log)
 
     QTextStream in(&file);
 
-    in << log << timestr;
+    in << log << timestr << "\r\n\r\n";
 
     file.flush();
 

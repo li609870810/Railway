@@ -7,7 +7,6 @@
 #include<qDebug>
 #include"typedef.h"
 
-
 //在注册表该目录下增加新内容
 #define TASKMANAGERSystem "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System"
 #define TASKMANAGERExplorer "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer"
@@ -67,6 +66,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    mysqlmodel = new MysqlModel;
+
     QRect rect0;
 
     rect0 = geometry();//记录widget位置，恢复时使用
@@ -76,6 +77,9 @@ MainWindow::MainWindow(QWidget *parent) :
     showFullScreen();
 
     hook(true);
+
+
+
     serialport = new SerialPort;
     barchart = new BarChart(this);
     analysis = new Analysis;
@@ -84,13 +88,13 @@ MainWindow::MainWindow(QWidget *parent) :
     //connect(date,SIGNAL(selectTime(QString)),this,SLOT(Queryfile(QString)));
 
     connect(this,SIGNAL(signal_SqlQuery(const QString&)),this,SLOT(slot_SqlQuery(const QString&))); //数据库操作
-    connect(analysis,SIGNAL(Analysis::signal_SqlQuery(const QString&)),this,SLOT(slot_SqlQuery(const QString&))); //数据库操作
+    connect(analysis,SIGNAL(signal_SqlQuery(const QString&)),this,SLOT(slot_SqlQuery(const QString&))); //数据库操作
 
-    connect(this,SIGNAL(signal_400mAnalysis(const QByteArray&)),analysis,SLOT(Analysis::_400mFrame(const QByteArray&))); //400m应答
-    connect(analysis,SIGNAL(Analysis::signal_400mSend(const QByteArray&)),this,SLOT(_400mAnswer(const QByteArray&))); //400m应答
+    connect(this,SIGNAL(signal_400mAnalysis(const QByteArray&)),analysis,SLOT(_400mFrame(const QByteArray&))); //400m应答
+    connect(analysis,SIGNAL(signal_400mSend(const QByteArray&)),this,SLOT(_400mAnswer(const QByteArray&))); //400m应答
 
-    connect(this,SIGNAL(signal_GMSRAnalysis(const QByteArray&)),analysis,SLOT(Analysis::GMSRFrame(const QByteArray&))); //GMSR应答
-    connect(analysis,SIGNAL(Analysis::signal_GMSRSend(const QByteArray&)),this,SLOT(GMSRAnswer(const QByteArray&))); //GMSR应答
+    connect(this,SIGNAL(signal_GMSRAnalysis(const QByteArray&)),analysis,SLOT(GMSRFrame(const QByteArray&))); //GMSR应答
+    connect(analysis,SIGNAL(signal_GMSRSend(const QByteArray&)),this,SLOT(GMSRAnswer(const QByteArray&))); //GMSR应答
 
     ui_init();//ui设置
 
@@ -101,15 +105,12 @@ MainWindow::MainWindow(QWidget *parent) :
 MainWindow::~MainWindow()
 {
     delete ui;
-    delete serialport;
-    delete analysis;
 }
 
 void MainWindow::on_pushButton_clicked()
 {
     this->close();
 }
-
 
 void MainWindow::ui_init()
 {

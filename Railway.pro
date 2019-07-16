@@ -7,6 +7,7 @@
 QT       += core gui
 QT       += serialport
 QT       += charts
+QT       += sql
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -35,7 +36,8 @@ SOURCES +=\
     main.cpp \
     login.cpp \
     typedef.cpp \
-    analysis.cpp
+    analysis.cpp \
+    mysqlmodel.cpp
 
 HEADERS  += \
     mainwindow.h \
@@ -82,7 +84,8 @@ HEADERS  += \
     log.h \
     login.h \
     typedef.h \
-    analysis.h
+    analysis.h \
+    mysqlmodel.h
 
 FORMS    += mainwindow.ui \
     datetime.ui \

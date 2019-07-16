@@ -8,9 +8,11 @@ INPUT(
 ./release\login.o
 ./release\typedef.o
 ./release\analysis.o
+./release\mysqlmodel.o
 ./release\moc_mainwindow.o
 ./release\moc_datetime.o
 ./release\moc_barchart.o
 ./release\moc_login.o
 ./release\moc_analysis.o
+./release\moc_mysqlmodel.o
 );
