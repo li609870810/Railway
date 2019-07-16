@@ -34,7 +34,8 @@ SOURCES +=\
     barchart.cpp \
     main.cpp \
     login.cpp \
-    typedef.cpp
+    typedef.cpp \
+    analysis.cpp
 
 HEADERS  += \
     mainwindow.h \
@@ -80,7 +81,8 @@ HEADERS  += \
     include/rapidjson/writer.h \
     log.h \
     login.h \
-    typedef.h
+    typedef.h \
+    analysis.h
 
 FORMS    += mainwindow.ui \
     datetime.ui \

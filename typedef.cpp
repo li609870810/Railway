@@ -60,3 +60,22 @@ void deleteDLE(QByteArray &data)
         }
     }
 }
+
+void GSMRAnswerFrame(QByteArray& data)
+{
+    data.clear();
+    data.append(0x10);
+    data.append(0x02);
+    data.append(char(0x0));
+    data.append(0x08);
+    data.append(0x90);
+    data.append(char(0x0));
+    data.append(0x91);
+    data.append(char(0x0));
+    data.append(0x04);
+    data.append(0x91);
+    data.append(0xa5);
+    data.append(0x5f);
+    data.append(0x10);
+    data.append(0x03);
+}

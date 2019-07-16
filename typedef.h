@@ -424,10 +424,10 @@ struct _GSMRDataHead
     uint16_t lenth;//帧长度
     uint8_t SourcePort; //源端口
     uint8_t SourceAddrLen; //源地址长度
-    uint32_t SourceAddr;//源地址
+    uint8_t SourceAddr[4];//源地址
     uint8_t TargetPort; //目的端口
     uint8_t TargetAddrLen; //目的地址长度
-    uint32_t TargetAddr;//目的地址
+    uint8_t TargetAddr[4];//目的地址
     uint8_t FrameType; //业务类型
     uint8_t FrameCommand;//命令
 
@@ -439,32 +439,48 @@ struct _GSMRDataHead
         data.append(static_cast<char>(lenth & 0xff));
         data.append(static_cast<char>(SourcePort & 0xff));
         data.append(static_cast<char>(SourceAddrLen & 0xff)) ;
-        data.append(static_cast<char>((SourceAddr>>24) & 0xff));
-        data.append(static_cast<char>((SourceAddr>>16) & 0xff));
-        data.append(static_cast<char>((SourceAddr>>8) & 0xff));
-        data.append(static_cast<char>(SourceAddr & 0xff));
+        if(SourceAddrLen > 4) SourceAddrLen = 4;
+        for(int i=0;i<SourceAddrLen;i++)
+        {
+            data.append(static_cast<char>(SourceAddr[i]));
+        }
         data.append(static_cast<char>(TargetPort & 0xff));
         data.append(static_cast<char>(TargetAddrLen & 0xff));
-        data.append(static_cast<char>(SourceAddrLen & 0xff)) ;
-        data.append(static_cast<char>((TargetAddr>>24) & 0xff));
-        data.append(static_cast<char>((TargetAddr>>16) & 0xff));
-        data.append(static_cast<char>((TargetAddr>>8) & 0xff));
-        data.append(static_cast<char>(TargetAddr & 0xff));
+        if(TargetAddrLen > 4) TargetAddrLen = 4;
+        for(int i=0;i<TargetAddrLen;i++)
+        {
+            data.append(static_cast<char>(TargetAddr[i]));
+        }
         data.append(static_cast<char>(FrameType & 0xff));
         data.append(static_cast<char>(FrameCommand & 0xff));
+
     }
-    void toJData(const QByteArray& data) //data To JDATA
+    int toJData(const QByteArray& data) //data To JDATA
     {
+        int re = 0;
         start = static_cast<uint16_t>((data.at(0)<<8) + data.at(1));
         lenth = static_cast<uint16_t>((data.at(2)<<8) + data.at(3));
         SourcePort = static_cast<uint8_t>(data.at(4));
         SourceAddrLen = static_cast<uint8_t>(data.at(5));
-        SourceAddr = static_cast<uint32_t>((data.at(6)<<24) + (data.at(7)<<16) + (data.at(8)<<8) + data.at(9));
-        TargetPort = static_cast<uint8_t>(data.at(10));
-        TargetAddrLen  = static_cast<uint8_t>(data.at(11));
-        TargetAddr = static_cast<uint32_t>((data.at(12)<<24) + (data.at(13)<<16) + (data.at(14)<<8) + data.at(15));
-        FrameType = static_cast<uint8_t>(data.at(16));
-        FrameCommand = static_cast<uint8_t>(data.at(17));
+        re += 5;
+        for(int i=0;i<SourceAddrLen;i++)
+        {
+            SourceAddr[i] = static_cast<uint8_t>(data.at(i+re));
+        }
+        re += SourceAddrLen;
+        TargetPort = static_cast<uint8_t>(data.at(re++));
+        TargetAddrLen  = static_cast<uint8_t>(data.at(re++));
+        re += 2;
+        for(int i=0;i<TargetAddrLen;i++)
+        {
+            TargetAddr[i] = static_cast<uint8_t>(data.at(i+re));
+        }
+        re += TargetAddrLen;
+
+        FrameType = static_cast<uint8_t>(data.at(re++));
+        FrameCommand = static_cast<uint8_t>(data.at(re++));
+
+        return re;
     }
 };
 
@@ -539,10 +555,10 @@ typedef struct __GSMREndColumnInfo //GSMR 列尾
         data.append(static_cast<char>((hostid>>8) & 0xff));
         data.append(static_cast<char>( hostid & 0xff));
 
-        data.append(static_cast<char>(((time_min & 0x3)<<6) + (time_sce & 0x3f));
-        data.append(static_cast<char>(((time_min>>2) & 0xf) + ((time_hour & 0xf)<<4));
-        data.append(static_cast<char>(((time_mon & 0x3)<<6) + ((time_day & 0x1f)<<1) + ((time_hour>>4) & 0x1));
-        data.append(static_cast<char>(((time_year & 0x3f)<<2) + ((time_mon>>2) & 0x3));
+        data.append(static_cast<char>(((time_min & 0x3)<<6) + (time_sce & 0x3f)));
+        data.append(static_cast<char>(((time_min>>2) & 0xf) + ((time_hour & 0xf)<<4)));
+        data.append(static_cast<char>(((time_mon & 0x3)<<6) + ((time_day & 0x1f)<<1) + ((time_hour>>4) & 0x1)));
+        data.append(static_cast<char>(((time_year & 0x3f)<<2) + ((time_mon>>2) & 0x3)));
         data.append(static_cast<char>((Position>>8) & 0xff));
         data.append(static_cast<char>(Position & 0xff));
         data.append(static_cast<char>((CellNumber>>8) & 0xff));
@@ -560,7 +576,7 @@ typedef struct __GSMREndColumnInfo //GSMR 列尾
         data.append(static_cast<char>( 0xff));
         data.append(static_cast<char>(0xff));
         data.append(static_cast<char>(0xff));
-        unsigned short crc = CRC16(data.data()+2, lenth);
+        unsigned short crc = CRC16(data.data()+2, Head.lenth);
         data.append(static_cast<char>((crc>>8) & 0xff));
         data.append(static_cast<char>(crc & 0xff));
         data.append(static_cast<char>((end>>8) & 0xff));
@@ -589,19 +605,20 @@ typedef struct __GSMRStatus  //GSMR模块状态
     {
         QByteArray data = recvdata;
         deleteDLE(data);
-        if(data.size() < 31) return;
+        if(data.size() < 22) return;
         Head.toJData(data);
 
-        Rstatus1 = (data.at(18)>>4) & 0xf;
-        Rstatus2 = data.at(18) & 0xf;
-        RSSI = static_cast<uint8_t>(data.at(19));
-        LAC = static_cast<uint16_t>((data.at(20) <<8) + data.at(21));
-        CI = static_cast<uint16_t>((data.at(22) <<8) + data.at(23));
-        UDPPost = static_cast<uint16_t>((data.at(24) <<8) + data.at(25));
-        Version = static_cast<uint8_t>(data.at(27));
+        Rstatus1 = (data.at(10)>>4) & 0xf;
+        Rstatus2 = data.at(10) & 0xf;
+        RSSI = static_cast<uint8_t>(data.at(11));
+        LAC = static_cast<uint16_t>((data.at(12) <<8) + data.at(13));
+        CI = static_cast<uint16_t>((data.at(14) <<8) + data.at(15));
+        UDPPost = static_cast<uint16_t>((data.at(16) <<8) + data.at(17));
+        Version = static_cast<uint8_t>(data.at(19));
 
-        crc16 = static_cast<uint16_t>((data.at(28)<<8) + data.at(29));
-        end = static_cast<uint16_t>((data.at(30)<<8) + data.at(31));
+        crc16 = static_cast<uint16_t>((data.at(20)<<8) + data.at(21));
+        end = static_cast<uint16_t>((data.at(22)<<8) + data.at(23));
+
     }
 }_GSMRStatus;
 
@@ -663,23 +680,23 @@ typedef struct __GSMRNetworkRegist  //GSMR网络注册
     {
         QByteArray data = recvdata;
         deleteDLE(data);
-        if(data.size() < 32) return;
+        if(data.size() < 24) return;
         Head.toJData(data);
 
-        RegistStatus = static_cast<uint8_t>(data.at(18));
-        IP1 = static_cast<uint8_t>(data.at(19));
-        IP2 = static_cast<uint8_t>(data.at(20));
-        IP3 = static_cast<uint8_t>(data.at(21));
-        IP4 = static_cast<uint8_t>(data.at(22));
-        for(int i=0;i<lenth-23;i++)
+        RegistStatus = static_cast<uint8_t>(data.at(10));
+        IP1 = static_cast<uint8_t>(data.at(11));
+        IP2 = static_cast<uint8_t>(data.at(12));
+        IP3 = static_cast<uint8_t>(data.at(13));
+        IP4 = static_cast<uint8_t>(data.at(14));
+        for(int i=0;i<Head.lenth-8;i++)
         {
-            if(data.at(23+i) == 0x20)
+            if(data.at(15+i) == 0x20)
             {
-                crc16 = static_cast<uint16_t>((data.at(24+i)<<8) + data.at(25+i));
-                end = static_cast<uint16_t>((data.at(26+i)<<8) + data.at(27+i));
+                crc16 = static_cast<uint16_t>((data.at(16+i)<<8) + data.at(17+i));
+                end = static_cast<uint16_t>((data.at(18+i)<<8) + data.at(19+i));
                 break;
             }else{
-                APNName[i] = static_cast<uint8_t>(data.at(23+i));
+                APNName[i] = static_cast<uint8_t>(data.at(15+i));
             }
         }
     }
@@ -715,17 +732,17 @@ typedef struct __GSMRNetworkLogout//GSMR网络注销,模块关机
     {
         QByteArray data = recvdata;
         deleteDLE(data);
-        if(data.size() < 30) return;
+        if(data.size() < 15) return;
         Head.toJData(data);
-        Status = static_cast<uint8_t>(data.at(18));
+        Status = static_cast<uint8_t>(data.at(10));
 
-        crc16 = static_cast<uint16_t>((data.at(19)<<8) + data.at(20));
-        end = static_cast<uint16_t>((data.at(21)<<8) + data.at(22));
+        crc16 = static_cast<uint16_t>((data.at(11)<<8) + data.at(12));
+        end = static_cast<uint16_t>((data.at(13)<<8) + data.at(14));
     }
 
 }_GSMRNetworkLogout;
 
-typedef struct __GSMRInquireIP//GSMR网络注销,模块关机
+typedef struct __GSMRInquireIP//GSMR查询IP
 {
     _GSMRDataHead Head;
 
@@ -774,8 +791,8 @@ typedef struct __GSMRInquireIP//GSMR网络注销,模块关机
         addDLE(data);
 
         Head.lenth = data.size()-2;
-        data[2] = (Head.lenth>>8) & 0xff;
-        data[3] = Head.lenth & 0xff;
+        data[2] = static_cast<char>((Head.lenth>>8) & 0xff);
+        data[3] = static_cast<char>(Head.lenth & 0xff);
         auto newcrc16 = CRC16(data.data()+2,Head.lenth);
         data.append(static_cast<char>((newcrc16>>8) & 0xff));
         data.append(static_cast<char>(newcrc16 & 0xff));
@@ -788,19 +805,23 @@ typedef struct __GSMRInquireIP//GSMR网络注销,模块关机
     {
         QByteArray data = recvdata;
         deleteDLE(data);
-        if(data.size() < 30) return;
+        if(data.size() < 19) return;
         Head.toJData(data);
 
-        Status = static_cast<uint8_t>(data.at(18));
-        CheckDeskIP1 = static_cast<uint8_t>(data.at(19));
-        CheckDeskIP2 = static_cast<uint8_t>(data.at(20));
-        CheckDeskIP3 = static_cast<uint8_t>(data.at(21));
-        CheckDeskIP4 = static_cast<uint8_t>(data.at(22));
+        Status = static_cast<uint8_t>(data.at(10));
+        CheckDeskIP1 = static_cast<uint8_t>(data.at(11));
+        CheckDeskIP2 = static_cast<uint8_t>(data.at(12));
+        CheckDeskIP3 = static_cast<uint8_t>(data.at(13));
+        CheckDeskIP4 = static_cast<uint8_t>(data.at(14));
 
-        crc16 = static_cast<uint16_t>((data.at(23)<<8) + data.at(24));
-        end = static_cast<uint16_t>((data.at(25)<<8) + data.at(26));
+        crc16 = static_cast<uint16_t>((data.at(15)<<8) + data.at(16));
+        end = static_cast<uint16_t>((data.at(17)<<8) + data.at(18));
     }
 
 }_GSMRInquireIP;
+
+
+void GSMRAnswerFrame(QByteArray& data);
+
 
 #endif // TYPEDEF_H

@@ -20,7 +20,7 @@
 QT_BEGIN_MOC_NAMESPACE
 struct qt_meta_stringdata_MainWindow_t {
     QByteArrayData data[12];
-    char stringdata0[193];
+    char stringdata0[178];
 };
 #define QT_MOC_LITERAL(idx, ofs, len) \
     Q_STATIC_BYTE_ARRAY_DATA_HEADER_INITIALIZER_WITH_OFFSET(len, \
@@ -38,16 +38,16 @@ QT_MOC_LITERAL(5, 53, 19), // "signal_GMSRAnalysis"
 QT_MOC_LITERAL(6, 73, 21), // "on_pushButton_clicked"
 QT_MOC_LITERAL(7, 95, 23), // "on_pushButton_2_clicked"
 QT_MOC_LITERAL(8, 119, 13), // "slot_SqlQuery"
-QT_MOC_LITERAL(9, 133, 18), // "Analysis_400mFrame"
-QT_MOC_LITERAL(10, 152, 18), // "Analysis_GMSRFrame"
-QT_MOC_LITERAL(11, 171, 21) // "on_statistics_clicked"
+QT_MOC_LITERAL(9, 133, 11), // "_400mAnswer"
+QT_MOC_LITERAL(10, 145, 10), // "GMSRAnswer"
+QT_MOC_LITERAL(11, 156, 21) // "on_statistics_clicked"
 
     },
     "MainWindow\0signal_SqlQuery\0\0data\0"
     "signal_400mAnalysis\0signal_GMSRAnalysis\0"
     "on_pushButton_clicked\0on_pushButton_2_clicked\0"
-    "slot_SqlQuery\0Analysis_400mFrame\0"
-    "Analysis_GMSRFrame\0on_statistics_clicked"
+    "slot_SqlQuery\0_400mAnswer\0GMSRAnswer\0"
+    "on_statistics_clicked"
 };
 #undef QT_MOC_LITERAL
 
@@ -105,8 +105,8 @@ void MainWindow::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         case 3: _t->on_pushButton_clicked(); break;
         case 4: _t->on_pushButton_2_clicked(); break;
         case 5: _t->slot_SqlQuery((*reinterpret_cast< const QString(*)>(_a[1]))); break;
-        case 6: _t->Analysis_400mFrame((*reinterpret_cast< const QByteArray(*)>(_a[1]))); break;
-        case 7: _t->Analysis_GMSRFrame((*reinterpret_cast< const QByteArray(*)>(_a[1]))); break;
+        case 6: _t->_400mAnswer((*reinterpret_cast< const QByteArray(*)>(_a[1]))); break;
+        case 7: _t->GMSRAnswer((*reinterpret_cast< const QByteArray(*)>(_a[1]))); break;
         case 8: _t->on_statistics_clicked(); break;
         default: ;
         }

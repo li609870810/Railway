@@ -7,8 +7,10 @@ INPUT(
 ./debug\main.o
 ./debug\login.o
 ./debug\typedef.o
+./debug\analysis.o
 ./debug\moc_mainwindow.o
 ./debug\moc_datetime.o
 ./debug\moc_barchart.o
 ./debug\moc_login.o
+./debug\moc_analysis.o
 );
