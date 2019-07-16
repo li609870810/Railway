@@ -306,6 +306,7 @@ void Analysis::GMSRFrame(const QByteArray &recvdata)
                         GSMRECI.sendtype = 0x5d;
                         GSMRECI.toData(data);
                         emit signal_GMSRSend(data);
+                        addResendQueue(data,false);
                     }
                     break;
 
@@ -355,6 +356,42 @@ void Analysis::GMSRFrame(const QByteArray &recvdata)
             case 0x29:{//GSMR查询IP
                 _GSMRInquireIP GSMRIIP;
                 GSMRIIP.toJData(data);
+                //数据库操作
+            }
+            break;
+
+            case 0x40:{//GSMR数据测试命令
+                _GSMRLibraryInspectionInfo GSMRLII;
+                GSMRLII.toJData(data);
+                GSMRLII.command = 0x41;
+                GSMRLII.sendtype = 0x41;
+                GSMRLII.toDataTestData(data);
+                emit signal_GMSRSend(data);
+                addResendQueue(data,false);
+                //数据库操作
+            }
+            break;
+
+            case 0x43:{//GSMR地面遥测应答
+                _GSMRLibraryInspectionInfo GSMRLII;
+                GSMRLII.toJData(data);
+                //GSMRLII.command++;
+                //GSMRLII.sendtype = 0x41;
+                //GSMRLII.toDataTestData(data);
+                //emit signal_GMSRSend(data);
+                //数据库操作
+            }
+            break;
+
+            case 0x44://GSMR地面遥测结果
+            case 0x45:{//GSMR上车遥测结果
+                _GSMRLibraryInspectionInfo GSMRLII;
+                GSMRLII.toGroundResultJData(data);
+                GSMRLII.command = 0x46;
+                GSMRLII.sendtype = 0x46;
+                GSMRLII.toGroundResultData(data);
+                emit signal_GMSRSend(data);
+                addResendQueue(data,false);
                 //数据库操作
             }
             break;

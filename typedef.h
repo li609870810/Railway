@@ -3,6 +3,8 @@
 
 #include"stdint.h"
 #include<QByteArray>
+#include <QDateTime>
+
 unsigned char CheckSum(const char *src, unsigned long sizes);
 
 static unsigned short const wCRC16Table[256] = {
@@ -340,6 +342,7 @@ typedef struct __400mGroundTelemetryResults//400m地面与上车遥测结果结�
     uint8_t DisconnectButton;      //断连按键状态
     uint8_t ExhaustButton;       //排风按键状态
     uint8_t QueryButton;         //查询按键状态
+    uint8_t OkButton;               //确认按键状态
     uint8_t RecordingUnit;        //记录单元故障状态
     uint8_t ClockUnit;            //时钟单元状态
     uint8_t GMS_RUnit;            //GMS_R单元配置
@@ -353,7 +356,7 @@ typedef struct __400mGroundTelemetryResults//400m地面与上车遥测结果结�
         _400mData = 0;
         DisconnectButton = 0;
         ExhaustButton = 0;
-
+        OkButton = 0;
         QueryButton = 0;
         RecordingUnit = 0;
         ClockUnit = 0;
@@ -377,10 +380,11 @@ typedef struct __400mGroundTelemetryResults//400m地面与上车遥测结果结�
         DisconnectButton = (data.at(15)>>6) & 0x1;
         ExhaustButton = (data.at(15)>>7) & 0x1;
         QueryButton = data.at(16) & 0x1;
-        RecordingUnit = (data.at(16)>>1) & 0x1;
-        ClockUnit = (data.at(16)>>2) & 0x1;
-        GMS_RUnit = (data.at(16)>>3) & 0x1;
-        _400mUnit = (data.at(16)>>4) & 0x1;
+        OkButton = (data.at(16)>>1) & 0x1;
+        RecordingUnit = (data.at(16)>>2) & 0x1;
+        ClockUnit = (data.at(16)>>3) & 0x1;
+        GMS_RUnit = (data.at(16)>>4) & 0x1;
+        _400mUnit = (data.at(16)>>5) & 0x1;
 
         checkSum  = static_cast<uint8_t>(data.at(20));
     }
@@ -395,7 +399,7 @@ typedef struct __400mGroundTelemetryResults//400m地面与上车遥测结果结�
         data[15] = ((ExhaustButton & 0x1)<<7) + ((DisconnectButton & 0x1)<<6) + ((_400mData & 0x1)<<5)\
                 + ((GMS_RData & 0x1)<<4) + ((ControlBox & 0x7)<<1) + ((LocomotiveHost>>7) & 0x1);
 
-        data[16] = ((_400mUnit & 0x7)<<4) + ((GMS_RUnit & 0x7)<<3) + ((ClockUnit & 0x7)<<2) + ((RecordingUnit & 0x7)<<1) + (QueryButton & 0x1);
+        data[16] = ((_400mUnit & 0x7)<<5) + ((GMS_RUnit & 0x7)<<4) + ((ClockUnit & 0x7)<<3) + ((RecordingUnit & 0x7)<<2) + ((OkButton & 0x7)<<1) + (QueryButton & 0x1);
         data[16] = data[3] & 0x1f;
 
         char crc14[14] = {0};
@@ -535,7 +539,10 @@ typedef struct __GSMREndColumnInfo //GSMR 列尾
         Voltage = static_cast<uint16_t>((data.at(37)<<8) + data.at(38));
         Current = static_cast<uint16_t>((data.at(39)<<8) + data.at(40));
         Battery = static_cast<uint32_t>((data.at(41)<<16) + (data.at(42)<<8) + data.at(43));
-        //6
+        for(int i=0;i<6;i++)
+        {
+            Reserved[i] = 0xff;
+        }
         crc16 = static_cast<uint16_t>((data.at(50)<<8) + data.at(51));
         end = static_cast<uint16_t>((data.at(52)<<8) + data.at(53));
     }
@@ -576,6 +583,11 @@ typedef struct __GSMREndColumnInfo //GSMR 列尾
         data.append(static_cast<char>( 0xff));
         data.append(static_cast<char>(0xff));
         data.append(static_cast<char>(0xff));
+        Head.lenth = data.size() -2;
+        data[2] = static_cast<char>((Head.lenth>>8) & 0xff);
+        data[3] = static_cast<char>(Head.lenth & 0xff);
+
+        addDLE(data);
         unsigned short crc = CRC16(data.data()+2, Head.lenth);
         data.append(static_cast<char>((crc>>8) & 0xff));
         data.append(static_cast<char>(crc & 0xff));
@@ -663,11 +675,11 @@ typedef struct __GSMRNetworkRegist  //GSMR网络注册
             data.append(static_cast<char>(APNPSW[i]));
         }
         data.append(static_cast<char>(0x20));
-
-        addDLE(data);
         Head.lenth = data.size()-2;
         data[2] = (Head.lenth>>8) & 0xff;
         data[3] = Head.lenth & 0xff;
+
+        addDLE(data);
         auto newcrc16 = CRC16(data.data()+2,Head.lenth);
         data.append(static_cast<char>((newcrc16>>8) & 0xff));
         data.append(static_cast<char>(newcrc16 & 0xff));
@@ -688,6 +700,7 @@ typedef struct __GSMRNetworkRegist  //GSMR网络注册
         IP2 = static_cast<uint8_t>(data.at(12));
         IP3 = static_cast<uint8_t>(data.at(13));
         IP4 = static_cast<uint8_t>(data.at(14));
+
         for(int i=0;i<Head.lenth-8;i++)
         {
             if(data.at(15+i) == 0x20)
@@ -715,11 +728,12 @@ typedef struct __GSMRNetworkLogout//GSMR网络注销,模块关机
         data.clear();
         Head.toData(data);
         data.append(static_cast<char>(Status));
-        addDLE(data);
 
         Head.lenth = data.size()-2;
         data[2] = (Head.lenth>>8) & 0xff;
         data[3] = Head.lenth & 0xff;
+
+        addDLE(data);
         auto newcrc16 = CRC16(data.data()+2,Head.lenth);
         data.append(static_cast<char>((newcrc16>>8) & 0xff));
         data.append(static_cast<char>(newcrc16 & 0xff));
@@ -788,11 +802,11 @@ typedef struct __GSMRInquireIP//GSMR查询IP
         }
         data.append(static_cast<char>(0x20));
 
-        addDLE(data);
-
         Head.lenth = data.size()-2;
         data[2] = static_cast<char>((Head.lenth>>8) & 0xff);
         data[3] = static_cast<char>(Head.lenth & 0xff);
+
+        addDLE(data);
         auto newcrc16 = CRC16(data.data()+2,Head.lenth);
         data.append(static_cast<char>((newcrc16>>8) & 0xff));
         data.append(static_cast<char>(newcrc16 & 0xff));
@@ -819,7 +833,176 @@ typedef struct __GSMRInquireIP//GSMR查询IP
     }
 
 }_GSMRInquireIP;
+typedef struct __GSMRLibraryInspectionInfo //GSMR库检信息
+{
+    _GSMRDataHead Head;
 
+    uint32_t LocomotiveNumber; //机车号
+    uint8_t sendtype;       //发送设备类型
+    uint8_t command;        //命令
+    uint16_t KJSBBH;              //库检设备编号低位
+    uint8_t LocomotiveHost;     //机车端号
+    uint8_t ControlBox;         //控制盒端号
+
+    uint8_t GMS_RData;               //GMS_R数据状态
+    uint8_t _400mData;               //400m数据状态
+    uint8_t DisconnectButton;      //断连按键状态
+    uint8_t ExhaustButton;       //排风按键状态
+    uint8_t QueryButton;         //查询按键状态
+    uint8_t OkButton;               //确认按键状态
+    uint8_t RecordingUnit;        //记录单元故障状态
+    uint8_t ClockUnit;            //时钟单元状态
+
+    uint8_t Reserved[22];    //预留
+    uint16_t crc16;         //CRC
+    uint16_t end;           //帧结束
+
+    void toJData(const QByteArray& recvdata) //data To JDATA
+    {
+        QByteArray data = recvdata;
+        deleteDLE(data);
+        if(data.size() < 0x36) return;
+        Head.toJData(data);
+        LocomotiveNumber = static_cast<uint32_t>((data.at(18)<<24) + (data.at(19)<<16) + (data.at(20)<<8) + data.at(21));
+        sendtype = static_cast<uint8_t>(data.at(22));
+        command = static_cast<uint8_t>(data.at(23));
+        KJSBBH = static_cast<uint16_t>((data.at(24)<<8) + data.at(25));
+        LocomotiveHost = static_cast<uint8_t>(data.at(26));
+        ControlBox = static_cast<uint8_t>(data.at(27));
+        //6
+        crc16 = static_cast<uint16_t>((data.at(50)<<8) + data.at(51));
+        end = static_cast<uint16_t>((data.at(52)<<8) + data.at(53));
+    }
+    void toData(QByteArray& data) //JDATA To data
+    {
+        data.clear();
+        Head.toData(data);
+        data.append(static_cast<char>((LocomotiveNumber>>24) & 0xff));
+        data.append(static_cast<char>((LocomotiveNumber>>16) & 0xff));
+        data.append(static_cast<char>((LocomotiveNumber>>8) & 0xff));
+        data.append(static_cast<char>(LocomotiveNumber & 0xff));
+        data.append(static_cast<char>(sendtype & 0xff));
+        data.append(static_cast<char>(command & 0xff));
+        data.append(static_cast<char>((KJSBBH>>8) & 0xff));
+        data.append(static_cast<char>(KJSBBH & 0xff));
+        data.append(static_cast<char>(LocomotiveHost & 0xff));
+        data.append(static_cast<char>(ControlBox & 0xff));
+        for(int i=0;i<22;i++)
+        {
+            data.append(static_cast<char>(0xff));
+        }
+        Head.lenth = data.size() -2;
+        data[2] = static_cast<char>((Head.lenth>>8) & 0xff);
+        data[3] = static_cast<char>(Head.lenth & 0xff);
+
+        addDLE(data);
+        unsigned short crc = CRC16(data.data()+2, Head.lenth);
+        data.append(static_cast<char>((crc>>8) & 0xff));
+        data.append(static_cast<char>(crc & 0xff));
+        data.append(static_cast<char>((end>>8) & 0xff));
+        data.append(static_cast<char>(end & 0xff));
+        addDLE(data);
+    }
+
+    void toDataTestData(QByteArray& data) //JDATA To data
+    {
+        data.clear();
+        Head.toData(data);
+        data.append(static_cast<char>((LocomotiveNumber>>24) & 0xff));
+        data.append(static_cast<char>((LocomotiveNumber>>16) & 0xff));
+        data.append(static_cast<char>((LocomotiveNumber>>8) & 0xff));
+        data.append(static_cast<char>(LocomotiveNumber & 0xff));
+        data.append(static_cast<char>(sendtype & 0xff));
+        data.append(static_cast<char>(command & 0xff));
+        data.append(static_cast<char>((KJSBBH>>8) & 0xff));
+        data.append(static_cast<char>(KJSBBH & 0xff));
+        data.append(static_cast<char>(LocomotiveHost & 0xff));
+        data.append(static_cast<char>(ControlBox & 0xff));
+
+        QDateTime current_date_time =QDateTime::currentDateTime();
+        uint8_t time_sce = static_cast<uint8_t>(current_date_time.time().second());
+        uint8_t time_min = static_cast<uint8_t>(current_date_time.time().minute());
+        uint8_t time_hour = static_cast<uint8_t>(current_date_time.time().hour());
+        uint8_t time_day = static_cast<uint8_t>(current_date_time.date().day());
+        uint8_t time_mon = static_cast<uint8_t>(current_date_time.date().month());
+        uint8_t time_year = static_cast<uint8_t>(current_date_time.date().year()-2000);
+
+        data.append(static_cast<char>(((time_min & 0x3)<<6) + (time_sce & 0x3f)));
+        data.append(static_cast<char>(((time_min>>2) & 0xf) + ((time_hour & 0xf)<<4)));
+        data.append(static_cast<char>(((time_mon & 0x3)<<6) + ((time_day & 0x1f)<<1) + ((time_hour>>4) & 0x1)));
+        data.append(static_cast<char>(((time_year & 0x3f)<<2) + ((time_mon>>2) & 0x3)));
+
+        for(int i=0;i<18;i++)
+        {
+            data.append(static_cast<char>(0xff));
+        }
+        Head.lenth = data.size() -2;
+        data[2] = static_cast<char>((Head.lenth>>8) & 0xff);
+        data[3] = static_cast<char>(Head.lenth & 0xff);
+        addDLE(data);
+        unsigned short crc = CRC16(data.data()+2, Head.lenth);
+        data.append(static_cast<char>((crc>>8) & 0xff));
+        data.append(static_cast<char>(crc & 0xff));
+        data.append(static_cast<char>((end>>8) & 0xff));
+        data.append(static_cast<char>(end & 0xff));
+        addDLE(data);
+    }
+    void toGroundResultJData(const QByteArray& recvdata) //data To JDATA
+    {
+        QByteArray data = recvdata;
+        deleteDLE(data);
+        if(data.size() < 0x36) return;
+        Head.toJData(data);
+        LocomotiveNumber = static_cast<uint32_t>((data.at(18)<<24) + (data.at(19)<<16) + (data.at(20)<<8) + data.at(21));
+        sendtype = static_cast<uint8_t>(data.at(22));
+        command = static_cast<uint8_t>(data.at(23));
+        KJSBBH = static_cast<uint16_t>((data.at(24)<<8) + data.at(25));
+        LocomotiveHost = static_cast<uint8_t>(data.at(26));
+        ControlBox = static_cast<uint8_t>(data.at(27));
+
+        GMS_RData = static_cast<uint8_t>(data.at(28));
+        _400mData = static_cast<uint8_t>(data.at(29));
+        DisconnectButton = static_cast<uint8_t>(data.at(30));
+        ExhaustButton = static_cast<uint8_t>(data.at(31));
+        QueryButton = static_cast<uint8_t>(data.at(32));
+        OkButton = static_cast<uint8_t>(data.at(33));
+        RecordingUnit = static_cast<uint8_t>(data.at(34));
+        ClockUnit = static_cast<uint8_t>(data.at(35));
+
+        //6
+        crc16 = static_cast<uint16_t>((data.at(50)<<8) + data.at(51));
+        end = static_cast<uint16_t>((data.at(52)<<8) + data.at(53));
+    }
+    void toGroundResultData(QByteArray& data)
+    {
+        data.clear();
+        Head.toData(data);
+        data.append(static_cast<char>((LocomotiveNumber>>24) & 0xff));
+        data.append(static_cast<char>((LocomotiveNumber>>16) & 0xff));
+        data.append(static_cast<char>((LocomotiveNumber>>8) & 0xff));
+        data.append(static_cast<char>(LocomotiveNumber & 0xff));
+        data.append(static_cast<char>(sendtype & 0xff));
+        data.append(static_cast<char>(command & 0xff));
+        data.append(static_cast<char>((KJSBBH>>8) & 0xff));
+        data.append(static_cast<char>(KJSBBH & 0xff));
+        data.append(static_cast<char>(LocomotiveHost & 0xff));
+        data.append(static_cast<char>(ControlBox & 0xff));
+        for(int i=0;i<14;i++)
+        {
+            data.append(static_cast<char>(0xff));
+        }
+        Head.lenth = data.size() -2;
+        data[2] = static_cast<char>((Head.lenth>>8) & 0xff);
+        data[3] = static_cast<char>(Head.lenth & 0xff);
+        addDLE(data);
+        unsigned short crc = CRC16(data.data()+2, Head.lenth);
+        data.append(static_cast<char>((crc>>8) & 0xff));
+        data.append(static_cast<char>(crc & 0xff));
+        data.append(static_cast<char>((end>>8) & 0xff));
+        data.append(static_cast<char>(end & 0xff));
+        addDLE(data);
+    }
+}_GSMRLibraryInspectionInfo;//GSMR库检信息
 
 void GSMRAnswerFrame(QByteArray& data);
 
