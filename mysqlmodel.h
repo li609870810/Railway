@@ -17,8 +17,9 @@ public:
     MysqlModel(const MysqlModel&) = delete;  //阻止拷贝
     MysqlModel & operator = (const MysqlModel&) = delete; //阻止赋值
 
-    bool SqlRequest(const QString& request, QSqlQuery &sql_query);
+    void close();
 private:
+    QSqlDatabase database;
     QString hostName;
     QString dbName;
     QString userName;

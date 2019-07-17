@@ -2,7 +2,7 @@
 #define LOGIN_H
 
 #include <QDialog>
-
+#include"mysqlmodel.h"
 
 namespace Ui {
 class Login;
@@ -23,6 +23,7 @@ private slots:
 
 private:
     Ui::Login *ui;
+    MysqlModel *mysqlmodel;
 };
 
 #endif // LOGIN_H

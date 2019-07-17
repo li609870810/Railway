@@ -99,6 +99,9 @@
         <height>250</height>
        </size>
       </property>
+      <property name="styleSheet">
+       <string notr="true"/>
+      </property>
      </widget>
     </item>
     <item row="0" column="1" colspan="3">
@@ -160,6 +163,17 @@
      <height>26</height>
     </rect>
    </property>
+   <property name="minimumSize">
+    <size>
+     <width>0</width>
+     <height>0</height>
+    </size>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>11</pointsize>
+    </font>
+   </property>
    <widget class="QMenu" name="menu">
     <property name="title">
      <string/>
@@ -171,18 +185,74 @@
     </property>
     <addaction name="menu_statistics"/>
    </widget>
-   <addaction name="menu_2"/>
+   <widget class="QMenu" name="menu_user">
+    <property name="title">
+     <string>用户管理</string>
+    </property>
+    <property name="separatorsCollapsible">
+     <bool>false</bool>
+    </property>
+    <property name="toolTipsVisible">
+     <bool>false</bool>
+    </property>
+    <addaction name="actionUser_2"/>
+    <addaction name="actionUserQH"/>
+   </widget>
+   <widget class="QMenu" name="menu_curuser">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
+    <property name="cursor">
+     <cursorShape>OpenHandCursor</cursorShape>
+    </property>
+    <property name="title">
+     <string>当前用户</string>
+    </property>
+   </widget>
    <addaction name="menu"/>
+   <addaction name="menu_curuser"/>
+   <addaction name="menu_user"/>
+   <addaction name="menu_2"/>
   </widget>
   <action name="menu_statistics">
    <property name="checkable">
     <bool>true</bool>
    </property>
    <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="enabled">
     <bool>true</bool>
    </property>
    <property name="text">
     <string>统计</string>
+   </property>
+  </action>
+  <action name="actionUser">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>用户管理</string>
+   </property>
+  </action>
+  <action name="actionUser_2">
+   <property name="checkable">
+    <bool>false</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>用户管理</string>
+   </property>
+  </action>
+  <action name="actionUserQH">
+   <property name="text">
+    <string>用户切换</string>
    </property>
   </action>
  </widget>

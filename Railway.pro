@@ -37,7 +37,10 @@ SOURCES +=\
     login.cpp \
     typedef.cpp \
     analysis.cpp \
-    mysqlmodel.cpp
+    mysqlmodel.cpp \
+    usermanagement.cpp \
+    curuserlogin.cpp \
+    userswitching.cpp
 
 HEADERS  += \
     mainwindow.h \
@@ -85,11 +88,18 @@ HEADERS  += \
     login.h \
     typedef.h \
     analysis.h \
-    mysqlmodel.h
+    mysqlmodel.h \
+    usermanagement.h \
+    curuserlogin.h \
+    userswitching.h \
+    style.h
 
 FORMS    += mainwindow.ui \
     datetime.ui \
     barchart.ui \
-    login.ui
+    login.ui \
+    usermanagement.ui \
+    curuserlogin.ui \
+    userswitching.ui
 
 DISTFILES +=

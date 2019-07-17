@@ -3,7 +3,6 @@
 MysqlModel::MysqlModel()
 {
     //建立并打开数据库
-    QSqlDatabase database;
     database = QSqlDatabase::addDatabase("QSQLITE");
     database.setDatabaseName("Railway.db");
     database.setUserName("root");
@@ -37,17 +36,8 @@ MysqlModel::MysqlModel()
         qDebug() << "inserted Wang!";
     }*/
 }
-bool MysqlModel::SqlRequest(const QString& request,QSqlQuery& sql_query)
+void MysqlModel::close()
 {
-    sql_query.prepare(request);
-
-    if(!sql_query.exec())
-    {
-        log.writelog(sql_query.lastError().text());
-        return false;
-    }
-    else
-    {
-        return true;
-    }
+    database.close();
 }
+

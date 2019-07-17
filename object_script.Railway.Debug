@@ -9,10 +9,16 @@ INPUT(
 ./debug\typedef.o
 ./debug\analysis.o
 ./debug\mysqlmodel.o
+./debug\usermanagement.o
+./debug\curuserlogin.o
+./debug\userswitching.o
 ./debug\moc_mainwindow.o
 ./debug\moc_datetime.o
 ./debug\moc_barchart.o
 ./debug\moc_login.o
 ./debug\moc_analysis.o
 ./debug\moc_mysqlmodel.o
+./debug\moc_usermanagement.o
+./debug\moc_curuserlogin.o
+./debug\moc_userswitching.o
 );

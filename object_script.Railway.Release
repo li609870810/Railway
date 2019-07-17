@@ -9,10 +9,16 @@ INPUT(
 ./release\typedef.o
 ./release\analysis.o
 ./release\mysqlmodel.o
+./release\usermanagement.o
+./release\curuserlogin.o
+./release\userswitching.o
 ./release\moc_mainwindow.o
 ./release\moc_datetime.o
 ./release\moc_barchart.o
 ./release\moc_login.o
 ./release\moc_analysis.o
 ./release\moc_mysqlmodel.o
+./release\moc_usermanagement.o
+./release\moc_curuserlogin.o
+./release\moc_userswitching.o
 );

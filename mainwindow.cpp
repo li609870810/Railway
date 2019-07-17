@@ -6,6 +6,8 @@
 #include<QStandardItemModel>
 #include<qDebug>
 #include"typedef.h"
+#include"curuserlogin.h"
+#include"style.h"
 
 //在注册表该目录下增加新内容
 #define TASKMANAGERSystem "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System"
@@ -66,25 +68,30 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    mysqlmodel = new MysqlModel;
+}
 
+void MainWindow::init()
+{
     QRect rect0;
-
     rect0 = geometry();//记录widget位置，恢复时使用
-
     setWindowFlags(Qt::Window);
-
     showFullScreen();
 
     hook(true);
 
+    ui->menu_curuser->setTitle(QString("当前用户：") + CurUserName);
+    LoginOk = false;
 
 
     serialport = new SerialPort;
     barchart = new BarChart(this);
     analysis = new Analysis;
-
+    mysqlmodel = new MysqlModel;
     date = new DateTime(this);
+
+    //connect(ui->menu_user,SIGNAL(triggered()),ui->menu_user,SLOT(trigger());
+    connect(ui->actionUser_2, SIGNAL(triggered()), this, SLOT(on_user_clicked()));
+    connect(ui->actionUserQH, SIGNAL(triggered()), this, SLOT(on_userQH_clicked()));
     //connect(date,SIGNAL(selectTime(QString)),this,SLOT(Queryfile(QString)));
 
     connect(this,SIGNAL(signal_SqlQuery(const QString&)),this,SLOT(slot_SqlQuery(const QString&))); //数据库操作
@@ -101,7 +108,6 @@ MainWindow::MainWindow(QWidget *parent) :
     receiveThread = std::thread(&MainWindow::ReceiveThread,this); //新线程，接收函数
     receiveThread.detach();
 }
-
 MainWindow::~MainWindow()
 {
     delete ui;
@@ -197,6 +203,7 @@ void MainWindow::ui_init()
     //将字体加粗
     student_model->item(0, 0)->setFont( QFont( "Times", 10, QFont::Black ));
 
+    ui->tableView->setStyleSheet(TableView);
 
 }
 
@@ -233,8 +240,17 @@ int MainWindow::ReceiveThread()
 }
 
 
+void MainWindow::setCurUserName(const QString &name)
+{
+    CurUserName = name;
+    ui->menu_curuser->setTitle(QString("当前用户：    ") + CurUserName + "    ");
+    if(name == "admin")
+    {
+        //this->setWindowFlags(Qt::WindowMaximizeButtonHint);
+    }else{
 
-
+    }
+}
 
 void MainWindow::slot_SqlQuery(const QString &data)
 {
@@ -270,4 +286,31 @@ void MainWindow::on_pushButton_2_clicked()
 void MainWindow::on_statistics_clicked()
 {
     barchart->show();
+}
+
+#include"usermanagement.h"
+void MainWindow::on_user_clicked()
+{
+    CurUserLogin login(this);
+    login.exec();
+
+    if(LoginOk)
+    {
+        UserManagement *u = new UserManagement(this);
+        u->show();
+        LoginOk = false;
+    }
+}
+#include"userswitching.h"
+void MainWindow::on_userQH_clicked()
+{
+    CurUserLogin login(this);
+    login.exec();
+
+    if(LoginOk)
+    {
+        UserSwitching *u = new UserSwitching(this);
+        u->show();
+        LoginOk = false;
+    }
 }

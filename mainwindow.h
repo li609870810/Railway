@@ -21,12 +21,14 @@ public:
     ~MainWindow();
 
     void ui_init();
-
+    void init();
 
     Log log;
     SerialPort *serialport;
     Analysis *analysis;
-
+    const QString& getCurUserName(){return CurUserName;}
+    void setCurUserName(const QString &name);
+    bool LoginOk;
 private slots:
     void on_pushButton_clicked();
     void on_pushButton_2_clicked();
@@ -35,6 +37,8 @@ private slots:
     void _400mAnswer(const QByteArray &data);  //400m应答
     void GMSRAnswer(const QByteArray &data);  //GMSR应答
     void on_statistics_clicked();
+    void on_user_clicked();
+    void on_userQH_clicked();
 
 private:
     Ui::MainWindow *ui;
@@ -44,7 +48,7 @@ private:
 
     std::thread receiveThread;
     int ReceiveThread();
-
+    QString CurUserName;//当前用户名
 
 signals:
     void signal_SqlQuery(const QString& data);
